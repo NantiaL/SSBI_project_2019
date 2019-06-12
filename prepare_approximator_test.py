@@ -49,10 +49,13 @@ def main():
             continue
 
         print()
-        print(key)
-        print(fit_line(helix_axis))
+        print("File name:", key)
+        print("Approximation:", fit_line(helix_axis))
     # plot_angles(all_axis)
-        print(pdbtm_m[key])
+        print('PDBTM Approx:', pdbtm_m[key][0])
+        #print(pdbtm_m[key][1:4])
+        print("Transformation Matrix:")
+        print(np.matrix(pdbtm_m[key][1:4]))
     #plt.hist(all_axis)
     #plt.show()
 
@@ -92,8 +95,6 @@ def parse_pdbtm(pdbtm_xml):
                     if tag_membrane == "TMATRIX":
                         for row in child2:
                             pdbtms_membranes[pdbid].append((row.tag[23:], row.attrib["X"], row.attrib["Y"], row.attrib["Z"], row.attrib["T"]))
-
-
             elif tag == "CHAIN":
                 chainid = child.attrib["CHAINID"]
                 for child2 in child:
@@ -133,6 +134,7 @@ def choose_ids(pdbtm_sec, number):
     chosen_ids = np.random.choice(ids, number)
 
     return chosen_ids
+
 
 def download_pdb_files(id_list):
     pdbl = PDBList()
@@ -201,11 +203,9 @@ def extract_ca_positions(pdb_id, protein, pdbtm_structs):
     return helix_c_alphas
 
 
-
 def plot_angles(all_helix_vectors):
-
+    """plots the computed angles"""
     angles = []
-
     for helix_vectors in all_helix_vectors:
         for i in range(len(helix_vectors)):
             for j in range(len(helix_vectors)):
