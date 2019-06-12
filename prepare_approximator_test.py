@@ -49,6 +49,7 @@ def main():
         if not all(v == 0 for v in normal):
             angles.append(angle_between(normal, xml_normal))
         print("Position:", middle)
+        print("PDBTM membrane thickness:", 2*xml_normal[2])
         try:
             print("Mean:", np.mean(middle))
             membrane_positions.append(np.mean(middle))

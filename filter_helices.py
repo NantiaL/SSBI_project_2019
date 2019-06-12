@@ -40,8 +40,8 @@ def get_membrane_intersecting_helices(helix_c_alphas, key, normal, middle):
     ##
     #new Nantia
     #compute thickness of membrane: Z component of normal vector is half of the membrane width.
-    thickness = 2 * normal[2]
-    print("Thickness:", thickness)
+    #thickness = 2 * normal[2]
+    #print("Membrane Thickness:", thickness)
     ##
 
     helix_c_alphas[key] = filt_helices
