@@ -33,6 +33,7 @@ def main():
 
 
     angles = []
+    membrane_positions =[]
     for key in helix_c_alphas.keys():
         normal = approximate_membrane_axis(helix_c_alphas, key)
         middle = approximate_membrane_position(helix_c_alphas, key)
@@ -46,7 +47,8 @@ def main():
             angles.append(angle_between(normal, xml_normal))
         print("Position:", middle)
         try:
-            print("Position of Membrane:", np.mean(middle))
+            print("Mean:", np.mean(middle))
+            membrane_positions.append(np.mean(middle))
         except:
             pass
     plot_angles(angles)
