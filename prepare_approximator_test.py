@@ -36,6 +36,7 @@ def main():
     filtered_helix_c_alphas = copy.deepcopy(helix_c_alphas) # new - luca
 
     angles = []
+    membrane_positions =[]
     for key in helix_c_alphas.keys():
         normal = approximate_membrane_axis(helix_c_alphas, key)
         middle = approximate_membrane_position(helix_c_alphas, key)
@@ -52,6 +53,11 @@ def main():
 
         filtered_helix_c_alphas = get_membrane_intersecting_helices(helix_c_alphas, key, normal, middle) # new - luca
 
+        try:
+            print("Mean:", np.mean(middle))
+            membrane_positions.append(np.mean(middle))
+        except:
+            pass
     plot_angles(angles)
 
 
