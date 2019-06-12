@@ -4,17 +4,13 @@ import xml.etree.cElementTree as ET
 from parse_pdbtm_xml import pdn
 import numpy as np
 from Bio.PDB import *
-from membrane_position_aproximator import approximate_helix_axis, fit_line
+from membrane_position_aproximator import approximate_membrane_axis, approximate_membrane_position, calculate_xml_normal_to_base_coordninates
 import matplotlib.pyplot as plt
 import math
 
 """
 TODO:
-least square in approximate_helix_axis instead of mean
-
 clustering of helices axis to refine them ? (with position+length in the space ?)
-
-least square between helices axis as approximate membrane normal
 
 position of membrane from mean middle points of helices
 
@@ -35,25 +31,22 @@ def main():
     helix_c_alphas = parse_pdbs(test_ids, pdbtm_s)
     print("approximating membranes...")
 
-    all_axis = []
-    for key in helix_c_alphas.keys():
-        helix_axis = []
-        for helix in helix_c_alphas[key]:
-            axis = approximate_helix_axis(helix)
-            helix_axis.append(axis)
-            # print(axis)
-        all_axis.append(helix_axis)
-        # print(helix_axis)
-        if len(helix_axis) <= 1:
-            print("skipping because too few helices:", key)
-            continue
 
+    angles = []
+    for key in helix_c_alphas.keys():
+        normal = approximate_membrane_axis(helix_c_alphas, key)
+        middle = approximate_membrane_position(helix_c_alphas, key)
         print()
         print(key)
-        print(fit_line(helix_axis))
-    # plot_angles(all_axis)
-        print(pdbtm_m[key])
+        print("Normal vector:", normal)
+        xml_normal = [round(x, 8) for x in calculate_xml_normal_to_base_coordninates(pdbtm_m, key)]
+        print("Normal xml   :", xml_normal)
+        # print("angle between:", angle_between(normal, xml_normal))
+        if not all(v == 0 for v in normal):
+            angles.append(angle_between(normal, xml_normal))
+        print("Position:", middle)
 
+    plot_angles(angles)
 
 
 
@@ -216,20 +209,12 @@ def extract_ca_positions(pdb_id, protein, pdbtm_structs):
 
 
 
-def plot_angles(all_helix_vectors):
+def plot_angles(angles):
 
-    angles = []
+    bins = np.arange(0, 10, 0.5)
+    plt.hist(angles, bins=bins,)
 
-    for helix_vectors in all_helix_vectors:
-        for i in range(len(helix_vectors)):
-            for j in range(len(helix_vectors)):
-                if i == j:
-                    continue
-                else:
-                    angles.append(math.degrees(angle_between(helix_vectors[i], helix_vectors[j])))
-
-    bins = np.arange(181)
-    plt.hist(angles, bins=bins)
+    plt.xlabel("degrees difference in the axis between xml and our prediction")
     plt.show()
 
 
