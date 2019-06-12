@@ -5,8 +5,10 @@ from parse_pdbtm_xml import pdn
 import numpy as np
 from Bio.PDB import *
 from membrane_position_aproximator import approximate_membrane_axis, approximate_membrane_position, calculate_xml_normal_to_base_coordinates
+from filter_helices import get_membrane_intersecting_helices, scalar_p
 import matplotlib.pyplot as plt
 import math
+import copy
 
 """
 TODO:
@@ -31,6 +33,7 @@ def main():
     helix_c_alphas = parse_pdbs(test_ids, pdbtm_s)
     print("approximating membranes...")
 
+    filtered_helix_c_alphas = copy.deepcopy(helix_c_alphas) # new - luca
 
     angles = []
     for key in helix_c_alphas.keys():
@@ -41,10 +44,13 @@ def main():
         print("Approximation:", normal)
         xml_normal = [round(x, 8) for x in calculate_xml_normal_to_base_coordinates(pdbtm_m, key)]
         print("PDBTM Approx :", xml_normal)
+
         # print("angle between:", angle_between(normal, xml_normal))
         if not all(v == 0 for v in normal):
             angles.append(angle_between(normal, xml_normal))
         print("Position:", middle)
+
+        filtered_helix_c_alphas = get_membrane_intersecting_helices(helix_c_alphas, key, normal, middle) # new - luca
 
     plot_angles(angles)
 

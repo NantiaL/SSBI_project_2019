@@ -1,3 +1,8 @@
 *.pdb
 *.cif
 *.ent
+*.pyc
+.pytest_cache/*
+
+# luca local repo - not needed
+clustering_helices.py 
