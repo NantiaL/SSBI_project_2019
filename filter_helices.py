@@ -26,7 +26,6 @@ def get_membrane_intersecting_helices(helix_c_alphas, key, normal, middle):
 
         nr_above = len([x for x in distances if x >= 0])
         nr_below = len([x for x in distances if x < 0])
-
         
         # TM helix
         if nr_above > 0 and nr_below > 0:
@@ -37,6 +36,13 @@ def get_membrane_intersecting_helices(helix_c_alphas, key, normal, middle):
         else:
             print("no distances calculated")
             continue
+
+    ##
+    #new Nantia
+    #compute thickness of membrane: Z component of normal vector is half of the membrane width.
+    thickness = 2 * normal[2]
+    print("Thickness:", thickness)
+    ##
 
     helix_c_alphas[key] = filt_helices
     return helix_c_alphas
