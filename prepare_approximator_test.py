@@ -45,7 +45,10 @@ def main():
         if not all(v == 0 for v in normal):
             angles.append(angle_between(normal, xml_normal))
         print("Position:", middle)
-
+        try:
+            print("Position of Membrane:", np.mean(middle))
+        except:
+            pass
     plot_angles(angles)
 
 
