@@ -26,7 +26,7 @@ def main():
     print("choosing ids...")
     test_ids = choose_ids(pdbtm_s, 100)
     print("downloading files...")
-    # download_pdb_files(test_ids)
+    download_pdb_files(test_ids)
     print("parsing all pdbs...")
     helix_c_alphas = parse_pdbs(test_ids, pdbtm_s)
     print("approximating membranes...")
@@ -37,18 +37,16 @@ def main():
         normal = approximate_membrane_axis(helix_c_alphas, key)
         middle = approximate_membrane_position(helix_c_alphas, key)
         print()
-        print(key)
-        print("Normal vector:", normal)
+        print("File name:", key)
+        print("Approximation:", normal)
         xml_normal = [round(x, 8) for x in calculate_xml_normal_to_base_coordninates(pdbtm_m, key)]
-        print("Normal xml   :", xml_normal)
+        print("PDBTM Approx :", xml_normal)
         # print("angle between:", angle_between(normal, xml_normal))
         if not all(v == 0 for v in normal):
             angles.append(angle_between(normal, xml_normal))
         print("Position:", middle)
 
     plot_angles(angles)
-
-
 
 
 def parse_pdbtm(pdbtm_xml):
@@ -86,8 +84,6 @@ def parse_pdbtm(pdbtm_xml):
                     if tag_membrane == "TMATRIX":
                         for row in child2:
                             pdbtms_membranes[pdbid].append((row.tag[23:], row.attrib["X"], row.attrib["Y"], row.attrib["Z"], row.attrib["T"]))
-
-
             elif tag == "CHAIN":
                 chainid = child.attrib["CHAINID"]
                 for child2 in child:
@@ -127,6 +123,7 @@ def choose_ids(pdbtm_sec, number):
     chosen_ids = np.random.choice(ids, number)
 
     return chosen_ids
+
 
 def download_pdb_files(id_list):
     pdbl = PDBList()
@@ -206,14 +203,10 @@ def extract_ca_positions(pdb_id, protein, pdbtm_structs):
 
 
 
-
-
-
 def plot_angles(angles):
-
+    """plots the computed angles"""
     bins = np.arange(0, 10, 0.5)
     plt.hist(angles, bins=bins,)
-
     plt.xlabel("degrees difference in the axis between xml and our prediction")
     plt.show()
 
