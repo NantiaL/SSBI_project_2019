@@ -30,7 +30,7 @@ def main():
     print("choosing ids...")
     test_ids = choose_ids(pdbtm_s, 100)
     print("downloading files...")
-    # download_pdb_files(test_ids)
+    download_pdb_files(test_ids)
     print("parsing all pdbs...")
     helix_c_alphas = parse_pdbs(test_ids, pdbtm_s)
     print("approximating membranes...")
@@ -53,9 +53,8 @@ def main():
         print(fit_line(helix_axis))
     # plot_angles(all_axis)
         print(pdbtm_m[key])
-
-
-
+    #plt.hist(all_axis)
+    #plt.show()
 
 
 def parse_pdbtm(pdbtm_xml):
@@ -200,19 +199,6 @@ def extract_ca_positions(pdb_id, protein, pdbtm_structs):
             # print("Missing chain in the pdb???", "Chain:", struct[0])
 
     return helix_c_alphas
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
