@@ -3,7 +3,7 @@ retrieve_pdbs.py:
 	- and downloads them
 	- saves downloaded files in directories pdb_structures/ and pdbtm_structures/
 
-classify_tm_helices.py (earlier: parse_pdbtm_xmlm.py):
+parse_pdbtm_xml.py :
 	- parses pdbtm and pdb files
 	- extracts tm (from pdbtm) and nontm (from pdb) helices
 	- and builds a linear SVM classifier for the identification of tm helices

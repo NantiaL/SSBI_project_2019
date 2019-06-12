@@ -2,7 +2,7 @@
 """
 File Name : parse_pdbtm_xml.py
 Creation Date : 05-06-2019
-Last Modified : So 09 Jun 2019 17:12:16 CEST
+Last Modified : Mi 12 Jun 2019 09:48:52 CEST
 Author : Luca Deininger
 Function of the script :
 """
@@ -298,4 +298,5 @@ def main():
     # print(tests)
 
 
-main()
+if __name__ == "__main__":
+    main()

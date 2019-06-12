@@ -30,7 +30,7 @@ def main():
     print("choosing ids...")
     test_ids = choose_ids(pdbtm_s, 100)
     # print("downloading files...")
-    # download_pdb_files(test_ids)
+    download_pdb_files(test_ids)
     print("parsing all pdbs...")
     helix_c_alphas = parse_pdbs(test_ids, pdbtm_s)
     print("approximating membranes...")
