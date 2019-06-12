@@ -1,6 +1,7 @@
 
 import numpy as np
 
+
 def approximate_helix_axis(c_alphas):
 
     normal_vectors = []
@@ -13,15 +14,8 @@ def approximate_helix_axis(c_alphas):
 
     if len(normal_vectors) == 0:
         return [0, 0, 0]
-    # print(normal_vectors)
-    sum_vector = [0, 0, 0]
-    for x in normal_vectors:
-        for i in range(len(x)):
-            sum_vector[i] += x[i]
-    mean_vector = normalize_vector([x/len(normal_vectors) for x in sum_vector])
-    # print("mean:", mean_vector)
 
-    return mean_vector
+    return fit_line(normal_vectors)
 
 
 def get_bisector(c_alphas, index):
@@ -41,8 +35,11 @@ def normalize_vector(vector):
     return normalized_vector
 
 
+def fit_line(vector_list):
+    data = np.array(vector_list)
+    uu, dd, vv = np.linalg.svd(data)
 
-
+    return vv[0]
 
 
 

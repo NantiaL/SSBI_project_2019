@@ -4,7 +4,7 @@ import xml.etree.cElementTree as ET
 from parse_pdbtm_xml import pdn
 import numpy as np
 from Bio.PDB import *
-from membrane_position_aproximator import approximate_helix_axis
+from membrane_position_aproximator import approximate_helix_axis, fit_line
 import matplotlib.pyplot as plt
 import math
 
@@ -29,8 +29,8 @@ def main():
     pdbtm_s, pdbtm_m = parse_pdbtm("pdbtm_reduced.xml")
     print("choosing ids...")
     test_ids = choose_ids(pdbtm_s, 100)
-    # print("downloading files...")
-    download_pdb_files(test_ids)
+    print("downloading files...")
+    # download_pdb_files(test_ids)
     print("parsing all pdbs...")
     helix_c_alphas = parse_pdbs(test_ids, pdbtm_s)
     print("approximating membranes...")
@@ -41,11 +41,19 @@ def main():
         for helix in helix_c_alphas[key]:
             axis = approximate_helix_axis(helix)
             helix_axis.append(axis)
-            print(axis)
+            # print(axis)
         all_axis.append(helix_axis)
+        # print(helix_axis)
+        if len(helix_axis) <= 1:
+            print("skipping because too few helices:", key)
+            continue
+
+        print()
+        print(key)
+        print(fit_line(helix_axis))
     # plot_angles(all_axis)
         print(pdbtm_m[key])
-        print(key)
+
 
 
 
