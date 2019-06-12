@@ -73,6 +73,7 @@ def fit_line(vector_list):
 
     return vv[0]
 
+
 def mean_of_points(points):
     sum_vector = list(points[0])
 
@@ -86,7 +87,7 @@ def mean_of_points(points):
     return sum_vector
 
 
-def calculate_xml_normal_to_base_coordninates(pdbtm_m, pdb_id):
+def calculate_xml_normal_to_base_coordinates(pdbtm_m, pdb_id):
 
     vectors = extract_tmatrix_vectors(pdbtm_m, pdb_id)
     normal = extract_normal_vector(pdbtm_m, pdb_id)
