@@ -7,6 +7,7 @@ Author : Luca Deininger
 Function of the script :
 """
 
+
 def get_membrane_intersecting_helices(helix_c_alphas, key, normal, middle):
     """
     Filters helix_c_alphas for one key not intersecting the membrane (currently without thickness).
@@ -32,7 +33,7 @@ def get_membrane_intersecting_helices(helix_c_alphas, key, normal, middle):
             filt_helices.append(helix)
         # NON-TM helix
         elif nr_above > 0 or nr_below > 0:
-            print("\n\n\nNon-TM helix found\n\n\n")
+            print("===> Non-TM helix found")
         else:
             print("no distances calculated")
             continue

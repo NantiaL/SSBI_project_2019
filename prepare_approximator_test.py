@@ -45,20 +45,18 @@ def main():
         print("Approximation:", normal)
         xml_normal = [round(x, 8) for x in calculate_xml_normal_to_base_coordinates(pdbtm_m, key)]
         print("PDBTM Approx :", xml_normal)
-
         # print("angle between:", angle_between(normal, xml_normal))
         if not all(v == 0 for v in normal):
             angles.append(angle_between(normal, xml_normal))
         print("Position:", middle)
-
-        filtered_helix_c_alphas = get_membrane_intersecting_helices(helix_c_alphas, key, normal, middle) # new - luca
-
         try:
             print("Mean:", np.mean(middle))
             membrane_positions.append(np.mean(middle))
         except:
             pass
-    plot_angles(angles)
+        # filter helices
+        filtered_helix_c_alphas = get_membrane_intersecting_helices(helix_c_alphas, key, normal,middle)  # new - luca
+    #plot_angles(angles)
 
 
 def parse_pdbtm(pdbtm_xml):
