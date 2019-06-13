@@ -3,10 +3,11 @@ retrieve_pdbs.py:
 	- and downloads them
 	- saves downloaded files in directories pdb_structures/ and pdbtm_structures/
 
-parse_pdbtm_xml.py :
+train_SVM.py (earlier: parse_pdbtm_xml.py):
 	- parses pdbtm and pdb files
 	- extracts tm (from pdbtm) and nontm (from pdb) helices
 	- and builds a linear SVM classifier for the identification of tm helices
+	- saves SVM to disk, can be loaded directly for prediction
 
 get_ss_from_structure.py:
 	- was previously used for parsing and creating plots
