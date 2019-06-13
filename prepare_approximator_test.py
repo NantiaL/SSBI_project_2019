@@ -1,7 +1,7 @@
 
 import os
 import xml.etree.cElementTree as ET
-from parse_pdbtm_xml import pdn
+from train_SVM import pdn
 import numpy as np
 from Bio.PDB import *
 from membrane_position_aproximator import approximate_membrane_axis, approximate_membrane_position, calculate_xml_normal_to_base_coordinates, approximate_membrane_thickness

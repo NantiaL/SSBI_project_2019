@@ -2,7 +2,7 @@
 """
 File Name : parse_pdbtm_xml.py
 Creation Date : 05-06-2019
-Last Modified : Mi 12 Jun 2019 09:48:52 CEST
+Last Modified : Do 13 Jun 2019 14:51:51 CEST
 Author : Luca Deininger
 Function of the script :
 """
@@ -20,6 +20,8 @@ from sklearn import svm
 from Bio import BiopythonWarning
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_val_score
+import pickle
+
 warnings.simplefilter('ignore', BiopythonWarning)
 
 
@@ -128,6 +130,7 @@ def pop_non_aas(dict_):
 def count_aa(seqs):
     """
     Count amino acids for each seq in seqs.
+    Can be used as preprocessing of input of SVM, given sequence/sequences of helices.
     """
     counter_seqs = []
     for seq in seqs:
@@ -155,9 +158,6 @@ def parse_dssp(dssp_dict):
     Parses dssp dict and extracts helices.
     """
     helices = []
-    # TODO consider chains
-    # TODO save more information
-    # TODO information regarding where to find this in pdb file (pointer?)
     counter = 0
     prev_entry = ["", "", ""]
     for k, v in dssp_dict.items():
@@ -234,12 +234,8 @@ def define_proteinogeneic_aas():
         aas.remove(no_aa)
 
 
-def main():
-
-    define_proteinogeneic_aas()
-
+def get_data_and_labels(pdb_dir, pdbtm_file, nr_tm, nr_nontm):
     # Extracting helices in pdb files
-    pdb_dir = "pdb_structures/"
     pdbs = os.listdir(pdb_dir)
     pdb_counts_aa_helices = []
     print("Extracting non tm helices from sampled pdb structures...")
@@ -256,7 +252,6 @@ def main():
     # Extracting helices in pdbtm files
     print("Extracting tm helices from pdbtm xml...")
     pdbtms = parse_pdbtm("pdbtm_reduced.xml")
-
     pdbtm_helices = get_aa_in_helices(pdbtms)
     pdbtm_nontm_ss = get_aa_NOT_in_helices(pdbtms)
 
@@ -264,11 +259,10 @@ def main():
     pdbtm_counts_nontm_ss = count_aa(pdbtm_nontm_ss)
 
     # Create data for training and testing SVM
-    max_helices = 1000  # to make equal numbers of tm /nontm helices
 
-    data_tm = [list(x.values()) for x in pdbtm_counts_aa_helices[:max_helices]]
+    data_tm = [list(x.values()) for x in pdbtm_counts_aa_helices[:nr_tm]]
     data_nontm = [list(x.values())
-                  for x in pdb_counts_aa_helices[:max_helices]]
+                  for x in pdb_counts_aa_helices[:nr_nontm]]
     #data_nontm2 = [list(x.values()) for x in pdbtm_counts_nontm_ss]
     #label_nontm2 = [0 for i in range(len(data_nontm))]
     data = data_tm+data_nontm
@@ -279,24 +273,49 @@ def main():
     label_nontm = [0 for i in range(len(data_nontm))]
     label = label_tm+label_nontm
 
-    print("Number of tm helices:", len(data_tm))
-    print("Number of non tm helices:", len(data_nontm))
+    return data, label
 
-    # Setting up SVM
-    clf = svm.SVC(kernel='linear', C=1.0)
 
-    print("Training and testing of linear SVM...")
-    scores = cross_val_score(clf, data, label, cv=5)
-    print("5-fold cross validation scores:", scores)
+def fit_SVM(clf, data, label):
+    clf.fit(data, label)
+    return clf
+
+
+def cv_SVM(clf, data, label, fold):
+    print("Cross-Validation of linear SVM...")
+    scores = cross_val_score(clf, data, label, cv=fold)
+    print("{}-fold cross validation scores:".format(fold), scores)
     print("Mean CV score:", sum(scores)/len(scores))
 
-    #clf.fit(data, label)
-    #tests = []
-    #data = [list(x.values()) for x in pdb_aa_helices]
-    # for x in pdb_aa_helices_data[max_helices:]:
-    #    tests.append(int(clf.predict(np.array([x]))))
-    # print(tests)
 
+def seqs_to_svm_input(seqs):
+    count_dicts = count_aa(seqs)
+    counts = [list(count_dict.values()) for count_dict in count_dicts]
+    return np.array(counts)
+
+
+def main():
+
+    define_proteinogeneic_aas()
+
+    pdb_dir = "pdb_structures/"
+    pdbtm_file = "pdbtm_reduced.xml"
+    nr_tm = 3000
+    nr_nontm = 3000
+
+    # get data and label
+    data, label = get_data_and_labels(pdb_dir, pdbtm_file, nr_tm, nr_nontm)
+
+    # setting up SVM
+    clf = svm.SVC(kernel='linear', C=1.0)
+
+    # train SVM
+    trained_SVM = fit_SVM(clf, data, label)
+    cv_SVM(clf, data, label, 15)
+
+    # save trained SVM to disk
+    filename = 'trained_SVM.sav'
+    pickle.dump(trained_SVM, open(filename, 'wb'))
 
 if __name__ == "__main__":
     main()
