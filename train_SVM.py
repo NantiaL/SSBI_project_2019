@@ -2,7 +2,7 @@
 """
 File Name : parse_pdbtm_xml.py
 Creation Date : 05-06-2019
-Last Modified : Do 13 Jun 2019 12:00:34 CEST
+Last Modified : Do 13 Jun 2019 14:51:51 CEST
 Author : Luca Deininger
 Function of the script :
 """
@@ -300,8 +300,8 @@ def main():
 
     pdb_dir = "pdb_structures/"
     pdbtm_file = "pdbtm_reduced.xml"
-    nr_tm = 1000
-    nr_nontm = 1000
+    nr_tm = 3000
+    nr_nontm = 3000
 
     # get data and label
     data, label = get_data_and_labels(pdb_dir, pdbtm_file, nr_tm, nr_nontm)
