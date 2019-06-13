@@ -1,8 +1,60 @@
 
 import numpy as np
+import matplotlib.pyplot as plt
 
+
+def approximate_membrane_thickness(helices, pdb_id, membrane_normal, membrane_position):
+    """
+    approximates the thickness of the membrane by looking at the smallest distance to an end of a helix
+    on each side off the membrane.
+    """
+
+    plane = create_plane_equation(membrane_normal, membrane_position)
+    distances = []
+
+    for helix in helices[pdb_id]:
+        if len(helix) == 0:
+            continue
+        dist_start, dist_end = get_distances_to_plane(helix, plane)
+
+        distances.append(dist_start)
+        distances.append(dist_end)
+
+    return distances
+
+
+
+def get_distances_to_plane(helix, plane):
+
+    start_dist = get_distance_point_plane(helix[0], plane)
+    end_dist = get_distance_point_plane(helix[-1], plane)
+
+    return start_dist, end_dist
+
+
+
+
+def get_distance_point_plane(point, plane):
+    p1 = plane[0]*point[0] + plane[1]*point[1] + plane[2]*point[2] + plane[3]
+    p2 = np.sqrt(point[0]*point[0] + point[1]*point[1] + point[2]*point[2])
+
+    dist = p1 / p2
+
+    return dist
+
+def create_plane_equation(membrane_normal, membrane_position):
+    plane = list(membrane_normal)
+    plane.append(-(sum([membrane_normal[i] * membrane_position[i] for i in range(len(membrane_normal))])))
+
+    return plane
 
 def approximate_membrane_position(helices, pdb_id):
+    """
+    approximate the membrane position by taking the average middle point of all tm-helices
+    :param helices: all helices dict
+    :param pdb_id: id of the file to look at
+    :return: the approximated middle point of the membrane
+    """
     points = []
 
     for helix in helices[pdb_id]:
@@ -12,6 +64,11 @@ def approximate_membrane_position(helices, pdb_id):
 
 
 def get_middle(helix):
+    """
+    returns the middle point of the given helix
+    :param helix: list of ca atom position vectors
+    :return: middle point of helix
+    """
     if len(helix) == 0:
         return [0, 0, 0]  # TODO filter empty helices before they get to here
 
@@ -22,6 +79,12 @@ def get_middle(helix):
 
 
 def approximate_membrane_axis(helices, pdb_id):
+    """
+    approximates the membrane normal vector by using single value decomposition over the calculated helix axis.
+    :param helices:
+    :param pdb_id:
+    :return:
+    """
     helix_axis = []
     for helix in helices[pdb_id]:
         axis = approximate_helix_axis(helix)
@@ -35,6 +98,12 @@ def approximate_membrane_axis(helices, pdb_id):
 
 
 def approximate_helix_axis(c_alphas):
+    """
+    approximates the helix axis by looking at the axis in every little part of the axis
+    and then using single value decomposition to fit an axis through all the part-axis.
+    :param c_alphas:
+    :return:
+    """
 
     normal_vectors = []
     for i in range(1, len(c_alphas)-2):
@@ -68,6 +137,11 @@ def normalize_vector(vector):
 
 
 def fit_line(vector_list):
+    """
+    does single value decomposition on the given vector list.
+    :param vector_list:
+    :return:
+    """
     data = np.array(vector_list)
     uu, dd, vv = np.linalg.svd(data)
 

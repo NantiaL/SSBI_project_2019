@@ -4,7 +4,7 @@ import xml.etree.cElementTree as ET
 from parse_pdbtm_xml import pdn
 import numpy as np
 from Bio.PDB import *
-from membrane_position_aproximator import approximate_membrane_axis, approximate_membrane_position, calculate_xml_normal_to_base_coordinates
+from membrane_position_aproximator import approximate_membrane_axis, approximate_membrane_position, calculate_xml_normal_to_base_coordinates, approximate_membrane_thickness
 from filter_helices import get_membrane_intersecting_helices, scalar_p
 import matplotlib.pyplot as plt
 import math
@@ -27,8 +27,8 @@ def main():
     pdbtm_s, pdbtm_m = parse_pdbtm("pdbtm_reduced.xml")
     print("choosing ids...")
     test_ids = choose_ids(pdbtm_s, 100)
-    print("downloading files...")
-    download_pdb_files(test_ids)
+    # print("downloading files...")
+    # download_pdb_files(test_ids)
     print("parsing all pdbs...")
     helix_c_alphas = parse_pdbs(test_ids, pdbtm_s)
     print("approximating membranes...")
@@ -36,11 +36,12 @@ def main():
     filtered_helix_c_alphas = copy.deepcopy(helix_c_alphas) # new - luca
 
     angles = []
-    membrane_positions =[]
+    membrane_positions = []
+    axis_distances = []
     for key in helix_c_alphas.keys():
         normal = approximate_membrane_axis(helix_c_alphas, key)
         middle = approximate_membrane_position(helix_c_alphas, key)
-        print()
+
         print("File name:", key)
         print("Approximation:", normal)
         xml_normal = [round(x, 8) for x in calculate_xml_normal_to_base_coordinates(pdbtm_m, key)]
@@ -48,16 +49,15 @@ def main():
         # print("angle between:", angle_between(normal, xml_normal))
         if not all(v == 0 for v in normal):
             angles.append(angle_between(normal, xml_normal))
+            axis_distances.extend(approximate_membrane_thickness(helix_c_alphas, key, normal, middle))
         print("Position:", middle)
+        membrane_positions.append(middle)
         print("PDBTM membrane thickness:", 2*xml_normal[2])
-        try:
-            print("Mean:", np.mean(middle))
-            membrane_positions.append(np.mean(middle))
-        except:
-            pass
+        print()
         # filter helices
         filtered_helix_c_alphas = get_membrane_intersecting_helices(helix_c_alphas, key, normal,middle)  # new - luca
     #plot_angles(angles)
+    plot_distances(axis_distances)
 
 
 def parse_pdbtm(pdbtm_xml):
@@ -211,7 +211,11 @@ def extract_ca_positions(pdb_id, protein, pdbtm_structs):
 
 
 
-
+def plot_distances(distances):
+    bins = np.arange(-1.4, 1.4, 0.01)
+    plt.hist(distances, bins=bins)
+    plt.xlabel("distances of helix ends from the approximated membrane plane")
+    plt.show()
 
 
 def plot_angles(angles):
