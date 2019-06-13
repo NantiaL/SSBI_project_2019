@@ -2,7 +2,7 @@
 """
 File Name : parse_pdbtm_xml.py
 Creation Date : 05-06-2019
-Last Modified : Do 13 Jun 2019 12:00:34 CEST
+Last Modified : Do 13 Jun 2019 21:11:48 CEST
 Author : Luca Deininger
 Function of the script :
 """
@@ -162,6 +162,11 @@ def parse_dssp(dssp_dict):
     prev_entry = ["", "", ""]
     for k, v in dssp_dict.items():
 
+        # sometimes helices with non-proteinogenic aas -> skip
+        if v[2] not in aas:
+            counter += 1
+            continue
+
         # starting new helix at start of dict
         if v[2] == "H" and counter == 0:
             new_helix = [v]
@@ -179,9 +184,9 @@ def parse_dssp(dssp_dict):
             helices.append(new_helix)
 
         # close helix at end of dict
-        elif v[2] == "H" and counter == len(list(dssp_dict.items()))-1:
-            new_helix.append(v)
+        if v[2] == "H" and counter == len(list(dssp_dict.items()))-1:
             helices.append(new_helix)
+
         counter += 1
         prev_entry = v
 
