@@ -297,6 +297,18 @@ def seqs_to_svm_input(seqs):
     counts = [list(count_dict.values()) for count_dict in count_dicts]
     return np.array(counts)
 
+def export_(data, label):
+    folder = "serialized/train_SVM_"
+    pickle.dump(data, open(folder+"data.p", "wb"))
+    pickle.dump(label, open(folder+"label.p", "wb"))
+
+
+def import_():
+    print("Importing serialized data and labels...")
+    folder = "serialized/train_SVM_"
+    data = pickle.load(open(folder + "data.p", "rb"))
+    label = pickle.load(open(folder + "label.p", "rb"))
+    return data, label
 
 def main():
 
@@ -308,17 +320,19 @@ def main():
     nr_nontm = 3000
 
     # get data and label
-    data, label = get_data_and_labels(pdb_dir, pdbtm_file, nr_tm, nr_nontm)
+    #data, label = get_data_and_labels(pdb_dir, pdbtm_file, nr_tm, nr_nontm)
+    #export_(data, label)
+    data, label = import_()
 
     # setting up SVM
-    clf = svm.SVC(kernel='linear', C=1.0)
+    clf = svm.SVC(kernel='linear', C=1.0, probability=True)
 
     # train SVM
     trained_SVM = fit_SVM(clf, data, label)
     cv_SVM(clf, data, label, 15)
 
     # save trained SVM to disk
-    filename = 'trained_SVM.sav'
+    filename = 'serialized/trained_SVM.sav'
     pickle.dump(trained_SVM, open(filename, 'wb'))
 
 if __name__ == "__main__":

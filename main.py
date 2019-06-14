@@ -2,7 +2,7 @@
 """
 File Name : main.py
 Creation Date : 13-06-2019
-Last Modified : Do 13 Jun 2019 21:29:19 CEST
+Last Modified : Fr 14 Jun 2019 11:13:59 CEST
 Author : Luca Deininger
 Function of the script :
 """
@@ -32,8 +32,8 @@ def main():
     # Saves (a lot of) time instead of parsing every time again
     helix_seqs, helix_info, helix_c_alphas = import_dicts()
 
-    # Annotate helices with SVM (TODO get confidence score)
-    trained_svm = pickle.load(open("trained_SVM.sav", 'rb'))
+    # Annotate helices with SVM
+    trained_svm = pickle.load(open("serialized/trained_SVM.sav", 'rb'))
     helix_svm_annotations = annotate_helices(trained_svm, helix_seqs)
 
     # just to show results, might be easier to understand structure by this
@@ -46,14 +46,14 @@ def main():
 
 
 def export_dicts(helix_seqs, helix_info, helix_c_alphas):
-    folder = "serialized/"
+    folder = "serialized/main_"
     pickle.dump(helix_seqs, open(folder+"helix_seqs.p", "wb"))
     pickle.dump(helix_info, open(folder+"helix_info.p", "wb"))
     pickle.dump(helix_c_alphas, open(folder+"helix_c_alphas.p", "wb"))
 
 
 def import_dicts():
-    folder = "serialized/"
+    folder = "serialized/main_"
     helix_seqs = pickle.load(open(folder + "helix_seqs.p", "rb"))
     helix_info = pickle.load(open(folder + "helix_info.p", "rb"))
     helix_c_alphas = pickle.load(
@@ -97,8 +97,8 @@ def parse_pdbs(pdb_dir):
 
 def annotate_helices(svm, helix_seqs):
     """
-    Returns: dictionary helix_annotations. For every helix in helix seqs annotate 1 (TM) or 0 (NONTM)
-    pdb_id -> [[1], [0] ... [1]]
+    Returns: dictionary helix_annotations. For every helix in helix seqs annotate the more probable annotation 0 (NONTM) or 1 (TM) and its probability
+    pdb_id -> [[0, prob(0)], [0, prob(0)] [1, prob(1)]... [0, prob(0)]]
 
     if pdb file doesn't contain helix: pdb_id -> "Error: No helices existent, thus annotation not possible"
     """
@@ -110,8 +110,8 @@ def annotate_helices(svm, helix_seqs):
             helix_annotations[pdb_id] = "Error: No helices existent, thus annotation not possible"
             continue
 
-        predictions = svm.predict(svm_input)
-        predictions = [[x] for x in predictions]
+        predictions = svm.predict_proba(svm_input)
+        predictions = [[list(x).index(max(x)), max(x)] for x in predictions]
         helix_annotations[pdb_id] = predictions
 
     return helix_annotations
