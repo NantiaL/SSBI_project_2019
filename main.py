@@ -20,17 +20,19 @@ from sklearn import svm
 from Bio import BiopythonWarning
 import pickle
 
+from membrane_approximator import approximate_membrane
+
 
 def main():
     define_proteinogenic_aas()
     # TODO on these PDB structures SVM was already trained -> create folder with different mixed PDBTM and PDB structures, can be done later as well
     pdb_dir = "pdb_structures/"
 
-    #helix_seqs, helix_info, helix_c_alphas = parse_pdbs(pdb_dir)
+    helix_seqs, helix_info, helix_c_alphas = parse_pdbs(pdb_dir)
     #export_dicts(helix_seqs, helix_info, helix_c_alphas)
 
     # Saves (a lot of) time instead of parsing every time again
-    helix_seqs, helix_info, helix_c_alphas = import_dicts()
+    # helix_seqs, helix_info, helix_c_alphas = import_dicts()
 
     # Annotate helices with SVM
     trained_svm = pickle.load(open("serialized/trained_SVM.sav", 'rb'))
@@ -39,11 +41,47 @@ def main():
     # just to show results, might be easier to understand structure by this
     for pdb_id in list(helix_seqs.keys()):
         print(pdb_id)
-        print("Sequences:", helix_seqs[pdb_id])
-        print("Annotations:", helix_svm_annotations[pdb_id], "\n")
-        #print("Infos:", helix_info[pdb_id])
-        #print("C_alphas:", helix_c_alphas[pdb_id],"\n")
 
+        if not test_annotations(helix_svm_annotations, pdb_id):
+            continue
+
+        # print("Sequences:", helix_seqs[pdb_id])
+        print("Annotations:", helix_svm_annotations[pdb_id])
+        # print("Infos:", helix_info[pdb_id])
+        # print("C_alphas:", helix_c_alphas[pdb_id])
+
+        mem_axis, mem_position = approximate_membrane(pdb_id, helix_c_alphas, helix_svm_annotations)
+
+        print("Approx. membrane axis:", mem_axis)
+        print("Approx. membrane pos :", mem_position)
+
+        print()
+
+
+def test_annotations(annotation, pdb_id):
+    count_tm_helices = 0
+    indices = []
+    for i in range(len(annotation[pdb_id])):
+        a = annotation[pdb_id][i]
+        if a[0] == 1:
+            count_tm_helices += 1
+            indices.append(i)
+
+    if count_tm_helices <= 1:
+        print("Protein probably not trans membrane too few tm helices.")
+        return false
+
+    avg_confidence = 0
+    for idx in indices:
+        avg_confidence += annotation[pdb_id][idx][1]
+
+    avg_confidence = avg_confidence/count_tm_helices
+
+    # TODO find good criteria:
+    #if avg_confidence < 0.9 and count_tm_helices < 5:
+    #    return false
+
+    return true
 
 def export_dicts(helix_seqs, helix_info, helix_c_alphas):
     folder = "serialized/main_"

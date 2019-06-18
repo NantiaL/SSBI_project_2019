@@ -1,12 +1,35 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
+
+
+def approximate_membrane(pdb_id, helices_c_alphas, helices_annotation):
+
+    indices_tm_helices = []
+    for i in range(len(helices_annotation[pdb_id])):
+        if helices_annotation[pdb_id][i][0] == 1:
+            indices_tm_helices.append(i)
+
+    tm_helices = []
+    for idx in indices_tm_helices:
+        tm_helices.append(helices_c_alphas[pdb_id][idx])
+
+    axis = approximate_membrane_axis(tm_helices)
+    if all(x == 0 for x in axis):
+        print("Couldn't approximate axis:", pdb_id)
+
+    position = approximate_membrane_position(tm_helices)
+
+    return axis, position
 
 
 def approximate_membrane_thickness(helices, pdb_id, membrane_normal, membrane_position):
     """
     approximates the thickness of the membrane by looking at the smallest distance to an end of a helix
     on each side off the membrane.
+
+    TODO: DOESNT WORK RETURNS COMPLETELY WRONG APPROXIMATIONS!
     """
 
     plane = create_plane_equation(membrane_normal, membrane_position)
@@ -20,8 +43,17 @@ def approximate_membrane_thickness(helices, pdb_id, membrane_normal, membrane_po
         distances.append(dist_start)
         distances.append(dist_end)
 
-    return distances
+    biggest_negative = -sys.maxsize - 1
+    smallest_positive = sys.maxsize
 
+    for dist in distances:
+        if biggest_negative < dist < 0:
+            biggest_negative = dist
+        if 0 < dist < smallest_positive:
+            smallest_positive = dist
+
+    # return round((smallest_positive - biggest_negative) * 100, 2)
+    return 0
 
 
 def get_distances_to_plane(helix, plane):
@@ -32,8 +64,6 @@ def get_distances_to_plane(helix, plane):
     return start_dist, end_dist
 
 
-
-
 def get_distance_point_plane(point, plane):
     p1 = plane[0]*point[0] + plane[1]*point[1] + plane[2]*point[2] + plane[3]
     p2 = np.sqrt(point[0]*point[0] + point[1]*point[1] + point[2]*point[2])
@@ -42,13 +72,15 @@ def get_distance_point_plane(point, plane):
 
     return dist
 
+
 def create_plane_equation(membrane_normal, membrane_position):
     plane = list(membrane_normal)
     plane.append(-(sum([membrane_normal[i] * membrane_position[i] for i in range(len(membrane_normal))])))
 
     return plane
 
-def approximate_membrane_position(helices, pdb_id):
+
+def approximate_membrane_position(helices):
     """
     approximate the membrane position by taking the average middle point of all tm-helices
     :param helices: all helices dict
@@ -57,7 +89,7 @@ def approximate_membrane_position(helices, pdb_id):
     """
     points = []
 
-    for helix in helices[pdb_id]:
+    for helix in helices:
         points.append(get_middle(helix))
 
     return get_middle(points)
@@ -78,7 +110,7 @@ def get_middle(helix):
         return mean_of_points([helix[int(len(helix)/2)], helix[int(len(helix)/2-1)]])
 
 
-def approximate_membrane_axis(helices, pdb_id):
+def approximate_membrane_axis(helices):
     """
     approximates the membrane normal vector by using single value decomposition over the calculated helix axis.
     :param helices:
@@ -86,12 +118,12 @@ def approximate_membrane_axis(helices, pdb_id):
     :return:
     """
     helix_axis = []
-    for helix in helices[pdb_id]:
+    for helix in helices:
         axis = approximate_helix_axis(helix)
         helix_axis.append(axis)
 
     if len(helix_axis) < 1:
-        print("skipping because too few helices:", pdb_id)
+        # print("skipping because too few helices")
         return [0, 0, 0]
 
     return fit_line(helix_axis)
@@ -161,6 +193,23 @@ def mean_of_points(points):
     return sum_vector
 
 
+def calculate_xml_membrane_position(pdbtm_m, pdb_id):
+    vectors = extract_tmatrix_vectors_with_T(pdbtm_m, pdb_id)
+
+    for vector in vectors:
+        for i in range(len(vector)-1):
+            vector[i] = vector[i] * vector[3]
+
+    sum_vector = []
+    for i in range(3):
+        sum_coordinate = 0
+        for vector in vectors:
+            sum_coordinate += vector[i]
+
+        sum_vector.append(sum_coordinate * -1)
+    return sum_vector
+
+
 def calculate_xml_normal_to_base_coordinates(pdbtm_m, pdb_id):
 
     vectors = extract_tmatrix_vectors(pdbtm_m, pdb_id)
@@ -178,12 +227,30 @@ def calculate_xml_normal_to_base_coordinates(pdbtm_m, pdb_id):
     return normalize_vector(base_normal)
 
 
+def get_xml_membrane_thickness(pdbtm_m, key):
+    normal = extract_normal_vector(pdbtm_m, key)
+
+    return normal[2]*2
+
+
 def extract_tmatrix_vectors(pdbtm_m, pdb_id):
     vectors = []
 
     for i in range(1, 4):
         vector = []
         for j in range(1, 4):
+            vector.append(float(pdbtm_m[pdb_id][i][j]))
+        vectors.append(vector)
+
+    return vectors
+
+
+def extract_tmatrix_vectors_with_T(pdbtm_m, pdb_id):
+    vectors = []
+
+    for i in range(1, 4):
+        vector = []
+        for j in range(1, 5):
             vector.append(float(pdbtm_m[pdb_id][i][j]))
         vectors.append(vector)
 
