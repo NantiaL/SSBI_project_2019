@@ -2,7 +2,7 @@
 """
 File Name : main.py
 Creation Date : 13-06-2019
-Last Modified : Fr 14 Jun 2019 11:13:59 CEST
+Last Modified : Fr 21 Jun 2019 20:12:49 CEST
 Author : Luca Deininger
 Function of the script :
 """
@@ -19,24 +19,29 @@ import numpy as np
 from sklearn import svm
 from Bio import BiopythonWarning
 import pickle
+import copy
 
 from membrane_approximator import approximate_membrane
 
 
 def main():
     define_proteinogenic_aas()
-    # TODO on these PDB structures SVM was already trained -> create folder with different mixed PDBTM and PDB structures, can be done later as well
-    pdb_dir = "pdb_structures/"
 
-    helix_seqs, helix_info, helix_c_alphas = parse_pdbs(pdb_dir)
+    # mixed pdbs and pdbtms
+    pdb_dir = "50pdb_5pdbtm/"
+
+    #helix_seqs, helix_info, helix_c_alphas = parse_pdbs(pdb_dir)
     #export_dicts(helix_seqs, helix_info, helix_c_alphas)
 
     # Saves (a lot of) time instead of parsing every time again
-    # helix_seqs, helix_info, helix_c_alphas = import_dicts()
+    helix_seqs, helix_info, helix_c_alphas = import_dicts()
 
     # Annotate helices with SVM
     trained_svm = pickle.load(open("serialized/trained_SVM.sav", 'rb'))
     helix_svm_annotations = annotate_helices(trained_svm, helix_seqs)
+
+    # Annotate helices with PDBTM
+    pdbtm_annotations = annotate_pdbtm(helix_info)
 
     # just to show results, might be easier to understand structure by this
     for pdb_id in list(helix_seqs.keys()):
@@ -50,12 +55,143 @@ def main():
         # print("Infos:", helix_info[pdb_id])
         # print("C_alphas:", helix_c_alphas[pdb_id])
 
-        mem_axis, mem_position = approximate_membrane(pdb_id, helix_c_alphas, helix_svm_annotations)
+        mem_axis, mem_position = approximate_membrane(
+            pdb_id, helix_c_alphas, helix_svm_annotations)
 
         print("Approx. membrane axis:", mem_axis)
         print("Approx. membrane pos :", mem_position)
 
         print()
+
+    # Validate SVM predictions
+    tp, tn, fp, fn, tpr, fpr = validate(helix_seqs, pdbtm_annotations, helix_svm_annotations)
+    print("TP: ",tp, "\nTN: ", tn, "\nFP: ", fp, "\nFN: ", fn, "\nTPR: ", tpr, "\nFPR: ", fpr)
+
+
+def validate(helix_seqs, truth, predictions):
+    """
+    Returns tp, tn, fp, fn, TPR and FPR for svm annotations vs pdbtm annotations.
+    """
+
+    tp = 0
+    tn = 0
+    fp = 0
+    fn = 0
+    for pdbid, truth_annot in truth.items():
+        predict_annot = predictions[pdbid]
+        for i in range(len(truth_annot)):
+            if truth_annot[i][0] == 1 and predict_annot[i][0] == 1:
+                tp += 1
+            elif truth_annot[i][0] == 0 and predict_annot[i][0] == 0:
+                tn += 1
+            elif truth_annot[i][0] == 0 and predict_annot[i][0] == 1:
+                fp += 1
+             #   print(pdbid)
+             #   print(truth_annot[i], predict_annot[i])
+             #   print(helix_seqs[pdbid][i])
+            elif truth_annot[i][0] == 1 and predict_annot[i][0] == 0:
+                fn += 1
+
+    try:
+        tpr = tp/(tp+fn)
+    except ZeroDivisionError:
+        tpr="Undef"
+
+    try:
+        fpr = fp/(fp+tn)
+    except ZeroDivisionError:
+        fpr="Undef"
+
+    return tp, tn, fp, fn, tpr, fpr
+
+def annotate_pdbtm(helix_info):
+    """
+    Returns dict with pdbid -> [[1], [0], [0], [1], [1]] 0 nontm helix, 1 for every tm helix
+    """
+    pdbtm = parse_pdbtm_xml("pdbtmall.xml")
+    pdbtm_annotations = copy.deepcopy(helix_info)
+
+    for pdbid, helices in helix_info.items():
+        pdb_annotation = []
+        if pdbid in pdbtm:
+            # for every helix: check if it is annotated as tm in pdbtm
+            for helix in helices:
+                start = helix[0][1]
+                end = helix[len(helix)-1][1]
+                annot = 0
+                for cand in pdbtm[pdbid]:
+                    start_pdbtm = cand[0][1]
+                    end_pdbtm = cand[1][1]
+                    # no overlap with pdbtm
+                    if start < start_pdbtm and end <= start_pdbtm:
+                        continue
+                    # no overlap with pdbtm
+                    elif start >= end_pdbtm and end > end_pdbtm:
+                        continue
+                    # only annotate helix as tm if at least half of the length of both helices overlap
+                    elif start < start_pdbtm:
+                        if end-start_pdbtm > ((end-start)/(2)):
+                           # print(pdbid, start, end, start_pdbtm, end_pdbtm)
+                            annot=1
+                            break
+                        else:
+                            continue
+                    else:
+                        if end_pdbtm-start > ((end-start)/(2)):
+                           # print(pdbid, start, end, start_pdbtm, end_pdbtm)
+                            annot=1
+                            break
+                        else:
+                            continue
+                pdb_annotation.append([annot])
+
+            pdbtm_annotations[pdbid] = pdb_annotation
+
+        # if pdb file not in pdbtm contained -> annotate all 0s
+        else:
+            pdbtm_annotations[pdbid] = [[0] for x in helices]
+
+    return pdbtm_annotations
+
+
+def parse_pdbtm_xml(xml_file):
+
+    tree = ET.parse('pdbtmall.xml')
+    root = tree.getroot()
+    root.tag, root.attrib
+    pdbtms = {}
+    # Parse XML
+    for pdbtm in root:
+        pdbid = pdbtm.attrib["ID"]
+        for child in pdbtm:
+            tag = child.tag[23:]
+            if tag == "CHAIN":
+                chainid = child.attrib["CHAINID"]
+                for child2 in child:
+                    tag2 = child2.tag[23:]
+                    # extracting sequence
+                    if tag2 == "SEQ":
+                        seq = child2.text
+                        seq = seq.replace("\n", "")
+                        seq = seq.replace(" ", "")
+                    # extracting sec structures
+                    elif tag2 == "REGION":
+                        seq_beg = int(child2.attrib["seq_beg"])
+                        seq_end = int(child2.attrib["seq_end"])
+                        pdb_beg = int(child2.attrib["pdb_beg"])
+                        pdb_end = int(child2.attrib["pdb_end"])
+                        type_ = child2.attrib["type"]
+                        if type_ != "H":
+                            continue
+
+                        if pdbid in pdbtms:
+                            pdbtms[pdbid].append(
+                                [(chainid, pdb_beg), (chainid, pdb_end)])
+                        else:
+                            pdbtms[pdbid] = [
+                                [(chainid, pdb_beg), (chainid, pdb_end)]]
+
+    return pdbtms
 
 
 def test_annotations(annotation, pdb_id):
@@ -69,7 +205,7 @@ def test_annotations(annotation, pdb_id):
 
     if count_tm_helices <= 1:
         print("Protein probably not trans membrane too few tm helices.")
-        return false
+        return False
 
     avg_confidence = 0
     for idx in indices:
@@ -78,10 +214,11 @@ def test_annotations(annotation, pdb_id):
     avg_confidence = avg_confidence/count_tm_helices
 
     # TODO find good criteria:
-    #if avg_confidence < 0.9 and count_tm_helices < 5:
+    # if avg_confidence < 0.9 and count_tm_helices < 5:
     #    return false
 
-    return true
+    return True
+
 
 def export_dicts(helix_seqs, helix_info, helix_c_alphas):
     folder = "serialized/main_"

@@ -349,24 +349,24 @@ def main():
 
     # setting up SVM
     clf = svm.SVC(kernel='linear', C=1.0, probability=True)
-    clf2 = svm.SVC(kernel='linear', C=2.0, probability=True)
-    clf3 = svm.SVC(kernel='linear', C=3.0, probability=True)
+  #  clf2 = svm.SVC(kernel='linear', C=2.0, probability=True)
+  #  clf3 = svm.SVC(kernel='linear', C=3.0, probability=True)
 
     # train SVM
     trained_SVM = fit_SVM(clf, data, label)
-    trained_SVM2 = fit_SVM(clf2, data, label)
-    trained_SVM3 = fit_SVM(clf3, data, label)
+#    trained_SVM2 = fit_SVM(clf2, data, label)
+#    trained_SVM3 = fit_SVM(clf3, data, label)
     cv_SVM(clf, data, label, 10)
-    cv_SVM(clf2, data, label, 10)
-    cv_SVM(clf3, data, label, 10)
+#    cv_SVM(clf2, data, label, 10)
+#    cv_SVM(clf3, data, label, 10)
 
     # validate SVM
     predictions = trained_SVM.predict(data)
     print(validate(data, label, predictions))
-    predictions = trained_SVM2.predict(data)
-    print(validate(data, label, predictions))
-    predictions = trained_SVM3.predict(data)
-    print(validate(data, label, predictions))
+#    predictions = trained_SVM2.predict(data)
+#    print(validate(data, label, predictions))
+#    predictions = trained_SVM3.predict(data)
+#    print(validate(data, label, predictions))
 
     # save trained SVM to disk
     filename = 'serialized/trained_SVM.sav'
