@@ -6,7 +6,8 @@ Last Modified : Fr 14 Jun 2019 11:13:59 CEST
 Author : Luca Deininger
 Function of the script :
 """
-import xml.etree.cElementTree as ET
+
+# import xml.etree.cElementTree as ET
 from Bio.PDB import *
 from train_SVM import pdn
 import os
@@ -69,7 +70,7 @@ def test_annotations(annotation, pdb_id):
 
     if count_tm_helices <= 1:
         print("Protein probably not trans membrane too few tm helices.")
-        return false
+        return False
 
     avg_confidence = 0
     for idx in indices:
@@ -81,7 +82,7 @@ def test_annotations(annotation, pdb_id):
     #if avg_confidence < 0.9 and count_tm_helices < 5:
     #    return false
 
-    return true
+    return True
 
 def export_dicts(helix_seqs, helix_info, helix_c_alphas):
     folder = "serialized/main_"
