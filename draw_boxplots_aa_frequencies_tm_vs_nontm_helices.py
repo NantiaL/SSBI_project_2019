@@ -2,7 +2,7 @@
 """
 File Name : get_ss_from_struc.py
 Creation Date : 02-06-2019
-Last Modified : Fr 21 Jun 2019 15:14:50 CEST
+Last Modified : Fr 21 Jun 2019 15:11:28 CEST
 Author : Luca Deininger
 Function of the script :
 """
@@ -210,7 +210,7 @@ def main():
     pdb_aa_helices, pdbtm_aa_helices, pdb_aa_helices_rel, pdbtm_aa_helices_rel=import_()
 
     # Boxplots of amino acid distributions
-    print("Plotting Bfigures/oxplots...")
+    print("Plotting Boxplots...")
    # Relative values without outliers
    # all together
     fig = figure(figsize=(12, 6))

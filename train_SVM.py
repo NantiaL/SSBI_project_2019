@@ -280,22 +280,11 @@ def get_data_and_labels(pdb_dir, pdbtm_file, nr_tm, nr_nontm):
     return data, label
 
 
-def fit_SVM(clf, data, label):
-    clf.fit(data, label)
-    return clf
-
-
-def cv_SVM(clf, data, label, fold):
-    print("Cross-Validation of linear SVM...")
-    scores = cross_val_score(clf, data, label, cv=fold)
-    print("{}-fold cross validation scores:".format(fold), scores)
-    print("Mean CV score:", sum(scores)/len(scores))
-
-
 def seqs_to_svm_input(seqs):
     count_dicts = count_aa(seqs)
     counts = [list(count_dict.values()) for count_dict in count_dicts]
     return np.array(counts)
+
 
 def export_(data, label):
     folder = "serialized/train_SVM_"
@@ -309,6 +298,40 @@ def import_():
     data = pickle.load(open(folder + "data.p", "rb"))
     label = pickle.load(open(folder + "label.p", "rb"))
     return data, label
+
+
+def fit_SVM(clf, data, label):
+    clf.fit(data, label)
+    return clf
+
+
+def cv_SVM(clf, data, label, fold):
+    print("Cross-Validation of linear SVM...")
+    scores = cross_val_score(clf, data, label, cv=fold)
+    print("{}-fold cross validation scores:".format(fold), scores)
+    print("Mean CV score:", sum(scores)/len(scores))
+
+
+def validate(data, label, predictions):
+    tp = 0
+    tn = 0
+    fp = 0
+    fn = 0
+    for i in range(len(label)):
+        if label[i] == 1 and predictions[i] == 1:
+            tp += 1
+        elif label[i] == 0 and predictions[i] == 0:
+            tn += 1
+        elif label[i] == 0 and predictions[i] == 1:
+            fp += 1
+        elif label[i] == 1 and predictions[i] == 0:
+            fn += 1
+
+    tpr = tp/(tp+fn)
+    fpr = fp/(fp+tn)
+
+    return tpr, fpr
+
 
 def main():
 
@@ -326,14 +349,29 @@ def main():
 
     # setting up SVM
     clf = svm.SVC(kernel='linear', C=1.0, probability=True)
+    clf2 = svm.SVC(kernel='linear', C=2.0, probability=True)
+    clf3 = svm.SVC(kernel='linear', C=3.0, probability=True)
 
     # train SVM
     trained_SVM = fit_SVM(clf, data, label)
-    cv_SVM(clf, data, label, 15)
+    trained_SVM2 = fit_SVM(clf2, data, label)
+    trained_SVM3 = fit_SVM(clf3, data, label)
+    cv_SVM(clf, data, label, 10)
+    cv_SVM(clf2, data, label, 10)
+    cv_SVM(clf3, data, label, 10)
+
+    # validate SVM
+    predictions = trained_SVM.predict(data)
+    print(validate(data, label, predictions))
+    predictions = trained_SVM2.predict(data)
+    print(validate(data, label, predictions))
+    predictions = trained_SVM3.predict(data)
+    print(validate(data, label, predictions))
 
     # save trained SVM to disk
     filename = 'serialized/trained_SVM.sav'
     pickle.dump(trained_SVM, open(filename, 'wb'))
+
 
 if __name__ == "__main__":
     main()
