@@ -2,7 +2,7 @@
 """
 File Name : main.py
 Creation Date : 13-06-2019
-Last Modified : Sa 22 Jun 2019 13:41:54 CEST
+Last Modified : Sa 22 Jun 2019 18:56:06 CEST
 Author : Luca Deininger
 Function of the script :
 """
@@ -28,16 +28,25 @@ def main():
     define_proteinogenic_aas()
 
     # mixed pdbs and pdbtms
-    pdb_dir = "50pdb_10pdbtm/"
+    #pdb_dir = "50pdb_0pdbtm/"
+    #pdb_dir = "0pdb_25pdbtm/"
+    pdb_dir = "50pdb_25pdbtm/"
+    #pdb_dir = "test_pdbtm/"
 
-    #helix_seqs, helix_info, helix_c_alphas = parse_pdbs(pdb_dir)
-    #export_dicts(helix_seqs, helix_info, helix_c_alphas)
+    parse_again = False#True
 
-    # Saves (a lot of) time instead of parsing every time again
-    helix_seqs, helix_info, helix_c_alphas = import_dicts()
+    if parse_again==True:
+        helix_seqs, helix_info, helix_c_alphas = parse_pdbs(pdb_dir)
+        export_dicts(helix_seqs, helix_info, helix_c_alphas, pdb_dir)
+    else:
+        helix_seqs, helix_info, helix_c_alphas = import_dicts(pdb_dir)
 
     # Annotate helices with SVM
-    trained_svm = pickle.load(open("serialized/trained_SVM.sav", 'rb'))
+    svm_name="trained_SVM.sav"
+    #svm_name="trained_SVM_rel.sav"
+    #svm_name="trained_SVM_tm_non_alpha_helices_ss_included.sav"
+    #svm_name="trained_SVM_lin_c_5.sav"
+    trained_svm = pickle.load(open("serialized/"+svm_name, 'rb'))
     helix_svm_annotations = annotate_helices(trained_svm, helix_seqs)
 
     # Annotate helices with PDBTM
@@ -88,14 +97,14 @@ def validate(helix_info, truth, predictions):
                 tn += 1
             elif truth_annot[i][0] == 0 and predict_annot[i][0] == 1:
                 fp += 1
-              #  print(pdbid)
-              #  print(truth_annot[i], predict_annot[i])
-              #  print(helix_info[pdbid][i][0], helix_info[pdbid][i][len(helix_info[pdbid][i])-1])
+    #            print(pdbid)
+    #            print(truth_annot[i], predict_annot[i])
+    #            print(helix_info[pdbid][i][0], helix_info[pdbid][i][len(helix_info[pdbid][i])-1])
             elif truth_annot[i][0] == 1 and predict_annot[i][0] == 0:
                 fn += 1
-             #   print(pdbid)
-             #   print(truth_annot[i], predict_annot[i])
-             #   print(helix_info[pdbid][i][0], helix_info[pdbid][i][len(helix_info[pdbid][i])-1])
+     #           print(pdbid)
+     #           print(truth_annot[i], predict_annot[i])
+     #           print(helix_info[pdbid][i][0], helix_info[pdbid][i][len(helix_info[pdbid][i])-1])
 
     try:
         tpr = tp/(tp+fn)
@@ -129,6 +138,7 @@ def annotate_pdbtm(helix_info):
                     start_pdbtm = cand[0][1]
                     end_pdbtm = cand[1][1]
                     chain_pdbtm=cand[0][0]
+                    overlap=2
 
             #        # annotate helix < length 5 as non_tm
             #        if (end-start)<5:
@@ -149,20 +159,20 @@ def annotate_pdbtm(helix_info):
 
                     # only annotate helix as tm if at least half of the length of both helices overlap
                     elif start < start_pdbtm:
-                        if end-start_pdbtm > ((end-start)/(2)):
+                        if ((end-start_pdbtm) > ((end-start)/(overlap))) and ((end-start_pdbtm) > ((end_pdbtm-start_pdbtm)/overlap)):
                            # print(pdbid, start, end, start_pdbtm, end_pdbtm)
                             annot=1
                             break
                         else:
                             continue
                     else:
-                        if end_pdbtm-start > ((end-start)/(2)):
+                        if ((end_pdbtm-start) > ((end-start)/(overlap))) and ((end_pdbtm-start)>((end_pdbtm-start_pdbtm)/overlap)):
                            # print(pdbid, start, end, start_pdbtm, end_pdbtm)
                             annot=1
                             break
                         else:
                             continue
-                #print("\n", "pdb:", helix[0], "/", helix[len(helix)-1], "pdbtm:", cand[0], "/", cand[1], "annot:", annot)
+      #          print("pdb:", helix[0], "/", helix[len(helix)-1], "pdbtm:", cand[0], "/", cand[1], "annot:", annot)
                 pdb_annotation.append([annot])
 
             pdbtm_annotations[pdbid] = pdb_annotation
@@ -240,15 +250,15 @@ def test_annotations(annotation, pdb_id):
     return True
 
 
-def export_dicts(helix_seqs, helix_info, helix_c_alphas):
-    folder = "serialized/main_"
+def export_dicts(helix_seqs, helix_info, helix_c_alphas, pdb_dir):
+    folder = "serialized/main_"+pdb_dir[0:-1]
     pickle.dump(helix_seqs, open(folder+"helix_seqs.p", "wb"))
     pickle.dump(helix_info, open(folder+"helix_info.p", "wb"))
     pickle.dump(helix_c_alphas, open(folder+"helix_c_alphas.p", "wb"))
 
 
-def import_dicts():
-    folder = "serialized/main_"
+def import_dicts(pdb_dir):
+    folder = "serialized/main_"+pdb_dir[0:-1]
     helix_seqs = pickle.load(open(folder + "helix_seqs.p", "rb"))
     helix_info = pickle.load(open(folder + "helix_info.p", "rb"))
     helix_c_alphas = pickle.load(
