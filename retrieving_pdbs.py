@@ -2,7 +2,7 @@
 """
 File Name : retrieving_pdbs.py
 Creation Date : 02-06-2019
-Last Modified : Di 04 Jun 2019 11:06:24 CEST
+Last Modified : Sa 22 Jun 2019 13:23:58 CEST
 Author : Luca Deininger
 Function of the script :
 """
@@ -43,12 +43,13 @@ for x in pdb_all_ids_reso:
 
 
 # Sample pdbs and pdbtms
-nr = 100
-np.random.seed(1234)
-sampled_pdbs = np.random.choice(pdb_ids, nr)
+nr_pdb = 50
+nr_pdbtm = 10
+np.random.seed(1996)
+sampled_pdbs = np.random.choice(pdb_ids, nr_pdb)
 
-np.random.seed(1234)
-sampled_pdbtms = np.random.choice(pdbtm_unique_ids, nr)
+np.random.seed(1996)
+sampled_pdbtms = np.random.choice(pdbtm_unique_ids, nr_pdbtm)
 
 print("Sampled PDBs:", sampled_pdbs)
 print("Sampled PDBTMs:", sampled_pdbtms)
@@ -57,9 +58,9 @@ pdbl = PDBList()
 
 # retrieve these from pdb database
 for i in sampled_pdbs:
-    pdbl.retrieve_pdb_file(i, pdir='pdb_structures',
+    pdbl.retrieve_pdb_file(i, pdir='{}pdb_{}pdbtm'.format(nr_pdb, nr_pdbtm),
                            file_format="pdb", overwrite=False)
 
 for i in sampled_pdbtms:
-    pdbl.retrieve_pdb_file(i, pdir='pdbtm_structures',
+    pdbl.retrieve_pdb_file(i, pdir='{}pdb_{}pdbtm'.format(nr_pdb, nr_pdbtm),
                            file_format="pdb", overwrite=False)
