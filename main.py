@@ -2,7 +2,7 @@
 """
 File Name : main.py
 Creation Date : 13-06-2019
-Last Modified : Fr 21 Jun 2019 20:12:49 CEST
+Last Modified : Sa 22 Jun 2019 13:41:54 CEST
 Author : Luca Deininger
 Function of the script :
 """
@@ -28,7 +28,7 @@ def main():
     define_proteinogenic_aas()
 
     # mixed pdbs and pdbtms
-    pdb_dir = "50pdb_5pdbtm/"
+    pdb_dir = "50pdb_10pdbtm/"
 
     #helix_seqs, helix_info, helix_c_alphas = parse_pdbs(pdb_dir)
     #export_dicts(helix_seqs, helix_info, helix_c_alphas)
@@ -64,11 +64,13 @@ def main():
         print()
 
     # Validate SVM predictions
-    tp, tn, fp, fn, tpr, fpr = validate(helix_seqs, pdbtm_annotations, helix_svm_annotations)
+    tp, tn, fp, fn, tpr, fpr = validate(helix_info, pdbtm_annotations, helix_svm_annotations)
     print("TP: ",tp, "\nTN: ", tn, "\nFP: ", fp, "\nFN: ", fn, "\nTPR: ", tpr, "\nFPR: ", fpr)
+    print("Correctly classified: ", (tn+tp)/(tp+tn+fp+fn)) 
+    print("Incorrectly classified: ", (fp+fn)/(tp+tn+fp+fn)) 
 
 
-def validate(helix_seqs, truth, predictions):
+def validate(helix_info, truth, predictions):
     """
     Returns tp, tn, fp, fn, TPR and FPR for svm annotations vs pdbtm annotations.
     """
@@ -86,11 +88,14 @@ def validate(helix_seqs, truth, predictions):
                 tn += 1
             elif truth_annot[i][0] == 0 and predict_annot[i][0] == 1:
                 fp += 1
-             #   print(pdbid)
-             #   print(truth_annot[i], predict_annot[i])
-             #   print(helix_seqs[pdbid][i])
+              #  print(pdbid)
+              #  print(truth_annot[i], predict_annot[i])
+              #  print(helix_info[pdbid][i][0], helix_info[pdbid][i][len(helix_info[pdbid][i])-1])
             elif truth_annot[i][0] == 1 and predict_annot[i][0] == 0:
                 fn += 1
+             #   print(pdbid)
+             #   print(truth_annot[i], predict_annot[i])
+             #   print(helix_info[pdbid][i][0], helix_info[pdbid][i][len(helix_info[pdbid][i])-1])
 
     try:
         tpr = tp/(tp+fn)
@@ -118,16 +123,30 @@ def annotate_pdbtm(helix_info):
             for helix in helices:
                 start = helix[0][1]
                 end = helix[len(helix)-1][1]
+                chain=helix[0][0]
                 annot = 0
                 for cand in pdbtm[pdbid]:
                     start_pdbtm = cand[0][1]
                     end_pdbtm = cand[1][1]
-                    # no overlap with pdbtm
+                    chain_pdbtm=cand[0][0]
+
+            #        # annotate helix < length 5 as non_tm
+            #        if (end-start)<5:
+            #            annot=0
+            #            break
+
+                    # if different chain -> continue
+                    if chain!=chain_pdbtm:
+                        continue
+
+                    # no overlap with pdbtm cand -> continue
                     if start < start_pdbtm and end <= start_pdbtm:
                         continue
-                    # no overlap with pdbtm
+
+                    # no overlap with pdbtm cand -> continue
                     elif start >= end_pdbtm and end > end_pdbtm:
                         continue
+
                     # only annotate helix as tm if at least half of the length of both helices overlap
                     elif start < start_pdbtm:
                         if end-start_pdbtm > ((end-start)/(2)):
@@ -143,6 +162,7 @@ def annotate_pdbtm(helix_info):
                             break
                         else:
                             continue
+                #print("\n", "pdb:", helix[0], "/", helix[len(helix)-1], "pdbtm:", cand[0], "/", cand[1], "annot:", annot)
                 pdb_annotation.append([annot])
 
             pdbtm_annotations[pdbid] = pdb_annotation
