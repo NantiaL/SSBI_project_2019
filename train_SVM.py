@@ -237,6 +237,16 @@ def define_proteinogeneic_aas():
     for no_aa in ["B", "J", "O", "U", "X", "Z"]:
         aas.remove(no_aa)
 
+def relative_counts(list_of_list):
+    for i in range(len(list_of_list)):
+        sum_counts=sum(list_of_list[i])
+        for j in range(len(list_of_list[i])):
+            try:
+                list_of_list[i][j]=(list_of_list[i][j])/sum_counts
+            except ZeroDivisionError:
+                list_of_list[i][j]=0.0
+    return list_of_list
+
 
 def get_data_and_labels(pdb_dir, pdbtm_file, nr_tm, nr_nontm):
     # Extracting helices in pdb files
@@ -265,17 +275,21 @@ def get_data_and_labels(pdb_dir, pdbtm_file, nr_tm, nr_nontm):
     # Create data for training and testing SVM
 
     data_tm = [list(x.values()) for x in pdbtm_counts_aa_helices[:nr_tm]]
+    data_tm=relative_counts(data_tm)
+
     data_nontm = [list(x.values())
                   for x in pdb_counts_aa_helices[:nr_nontm]]
-    #data_nontm2 = [list(x.values()) for x in pdbtm_counts_nontm_ss]
-    #label_nontm2 = [0 for i in range(len(data_nontm))]
-    data = data_tm+data_nontm
-    data = np.array(data, dtype=int)
+    data_nontm=relative_counts(data_nontm)
+
+    #data_nontm2 = [list(x.values()) for x in pdbtm_counts_nontm_ss[:nr_nontm]]
+    data = data_tm+data_nontm#+data_nontm2
+    data = np.array(data, dtype=float)
 
     # labeling of data
     label_tm = [1 for i in range(len(data_tm))]
     label_nontm = [0 for i in range(len(data_nontm))]
-    label = label_tm+label_nontm
+    #label_nontm2 = [0 for i in range(len(data_nontm2))]
+    label = label_tm+label_nontm#+label_nontm2
 
     return data, label
 
@@ -343,9 +357,9 @@ def main():
     nr_nontm = 3000
 
     # get data and label
-    #data, label = get_data_and_labels(pdb_dir, pdbtm_file, nr_tm, nr_nontm)
-    #export_(data, label)
-    data, label = import_()
+    data, label = get_data_and_labels(pdb_dir, pdbtm_file, nr_tm, nr_nontm)
+    export_(data, label)
+    #data, label = import_()
 
     # setting up SVM
     clf = svm.SVC(kernel='linear', C=1.0, probability=True)
@@ -356,7 +370,7 @@ def main():
     trained_SVM = fit_SVM(clf, data, label)
 #    trained_SVM2 = fit_SVM(clf2, data, label)
 #    trained_SVM3 = fit_SVM(clf3, data, label)
-    cv_SVM(clf, data, label, 10)
+#    cv_SVM(clf, data, label, 10)
 #    cv_SVM(clf2, data, label, 10)
 #    cv_SVM(clf3, data, label, 10)
 
@@ -369,7 +383,7 @@ def main():
 #    print(validate(data, label, predictions))
 
     # save trained SVM to disk
-    filename = 'serialized/trained_SVM.sav'
+    filename = 'serialized/trained_SVM_rel.sav'
     pickle.dump(trained_SVM, open(filename, 'wb'))
 
 
