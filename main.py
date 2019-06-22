@@ -7,7 +7,7 @@ Author : Luca Deininger
 Function of the script :
 """
 
-# import xml.etree.cElementTree as ET
+import xml.etree.cElementTree as ET
 from Bio.PDB import *
 from train_SVM import pdn
 import os
@@ -30,7 +30,7 @@ def main():
     define_proteinogenic_aas()
 
     # mixed pdbs and pdbtms
-    pdb_dir = "50pdb_10pdbtm/"
+    pdb_dir = "500pdb_100pdbtm/"
 
     #helix_seqs, helix_info, helix_c_alphas = parse_pdbs(pdb_dir)
     #export_dicts(helix_seqs, helix_info, helix_c_alphas)
@@ -46,32 +46,92 @@ def main():
     pdbtm_annotations = annotate_pdbtm(helix_info)
 
     # just to show results, might be easier to understand structure by this
-    for pdb_id in list(helix_seqs.keys()):
-        print(pdb_id)
+    correctly_classified = []
+    angles = []
+    distances = []
+    confidences_mistakes = []
+    confidences = []
+    false_positives = []
 
-        if not test_annotations(helix_svm_annotations, pdb_id):
-            test_result_against_pdbtm(pdb_id, helix_svm_annotations[pdb_id], [0, 0, 0], [0, 0, 0])
-            print()
-            continue
+    for pdb_id in list(helix_seqs.keys()):
+        # print(pdb_id)
+
+        accepted, mean_confidence = test_annotations(helix_svm_annotations, pdb_id)
 
         # print("Sequences:", helix_seqs[pdb_id])
         # print("Annotations:", helix_svm_annotations[pdb_id])
         # print("Infos:", helix_info[pdb_id])
         # print("C_alphas:", helix_c_alphas[pdb_id])
 
-        mem_axis, mem_position = approximate_membrane(
-            pdb_id, helix_c_alphas, helix_svm_annotations)
+        if not accepted:
+            class_correct, angle, dist, false_positive = test_result_against_pdbtm(pdb_id,
+                                                                                   helix_svm_annotations[pdb_id],
+                                                                                   [0, 0, 0], [0, 0, 0])
+        else:
+            mem_axis, mem_position = approximate_membrane(pdb_id, helix_c_alphas, helix_svm_annotations)
+            class_correct, angle, dist, false_positive = test_result_against_pdbtm(pdb_id,
+                                                                                   helix_svm_annotations[pdb_id],
+                                                                                   mem_axis, mem_position)
 
-        print("Approx. membrane axis:", mem_axis)
-        print("Approx. membrane pos :", mem_position)
+        # print("Approx. membrane axis:", mem_axis)
+        # print("Approx. membrane pos :", mem_position)
         # pdbid, helix_annotations, membrane_axis, membrane_position
-        test_result_against_pdbtm(pdb_id, helix_svm_annotations[pdb_id], mem_axis, mem_position)
 
-        print()
+
+        if mean_confidence is not None:
+            if not class_correct:
+                confidences_mistakes.append(mean_confidence)
+
+        correctly_classified.append(class_correct)
+
+        if class_correct and angle != -1:
+            if angle > 90:
+                angle = np.abs(angle-180)
+
+            angles.append(angle)
+            distances.append(dist)
+
+        if not class_correct:
+            false_positives.append(false_positive)
+
+        # print()
+
+    #plt.hist(confidences, alpha=0.5)
+    #plt.hist(confidences_mistakes, color='red', alpha=0.5)
+    #plt.title("Confidence mistakes")
+    #plt.show()
+    #plt.close()
+
+
+
+    total = len(correctly_classified)
+    correct = sum([1 for x in correctly_classified if x])
+    wrong = total - correct
+    false_positive_num = sum([1 for x in false_positives if x])
+    false_negative_num = sum([1 for x in false_positives if not x])
+    print("Correctly classified:", correct, "/", total)
+    print("Wrongly classified  :", wrong, "/", total)
+    print("False positives:" , false_positive_num)
+    print("False negatives:", false_negative_num)
+
+    #print(distances)
+    #print(angles)
+    plt.hist(distances)
+    plt.title("Distances from pdbtm matrix: " + str(len(distances)) + " files.")
+    plt.xlabel("distance in Angstrom(?)")
+    plt.show()
+    plt.close()
+
+    plt.hist(angles)
+    plt.title("Angles between normal approximation and pdbtm normal: " + str(len(distances)) + " files.")
+    plt.xlabel("Angle in degrees")
+
+    plt.show()
+
 
     # Validate SVM predictions
     tp, tn, fp, fn, tpr, fpr = validate(helix_info, pdbtm_annotations, helix_svm_annotations)
-    print("TP: ",tp, "\nTN: ", tn, "\nFP: ", fp, "\nFN: ", fn, "\nTPR: ", tpr, "\nFPR: ", fpr)
+    print("TP: ", tp, "\nTN: ", tn, "\nFP: ", fp, "\nFN: ", fn, "\nTPR: ", tpr, "\nFPR: ", fpr)
     print("Correctly classified: ", (tn+tp)/(tp+tn+fp+fn)) 
     print("Incorrectly classified: ", (fp+fn)/(tp+tn+fp+fn)) 
 
@@ -106,7 +166,7 @@ def validate(helix_info, truth, predictions):
     try:
         tpr = tp/(tp+fn)
     except ZeroDivisionError:
-        tpr="Undef"
+        tpr ="Undef"
 
     try:
         fpr = fp/(fp+tn)
@@ -114,6 +174,7 @@ def validate(helix_info, truth, predictions):
         fpr="Undef"
 
     return tp, tn, fp, fn, tpr, fpr
+
 
 def annotate_pdbtm(helix_info):
     """
@@ -221,6 +282,7 @@ def parse_pdbtm_xml(xml_file):
 
 
 def test_annotations(annotation, pdb_id):
+    min_number_helices = 1
     count_tm_helices = 0
     indices = []
     for i in range(len(annotation[pdb_id])):
@@ -229,21 +291,21 @@ def test_annotations(annotation, pdb_id):
             count_tm_helices += 1
             indices.append(i)
 
-    if count_tm_helices <= 1:
-        print("Protein probably not trans membrane too few tm helices.")
-        return False
+    if count_tm_helices == 0:
+        # print("Protein without tm helices.")
+        return False, None
 
     avg_confidence = 0
     for idx in indices:
         avg_confidence += annotation[pdb_id][idx][1]
 
     avg_confidence = avg_confidence/count_tm_helices
-
+    # print("Aveage confidence per helix:", avg_confidence)
     # TODO find good criteria:
-    # if avg_confidence < 0.9 and count_tm_helices < 5:
-    #    return false
+    if avg_confidence < 0.9 and count_tm_helices < 10 or count_tm_helices <= min_number_helices:
+        return False, avg_confidence
 
-    return True
+    return True, avg_confidence
 
 
 def export_dicts(helix_seqs, helix_info, helix_c_alphas):

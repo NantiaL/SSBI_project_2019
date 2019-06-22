@@ -43,8 +43,8 @@ for x in pdb_all_ids_reso:
 
 
 # Sample pdbs and pdbtms
-nr_pdb = 50
-nr_pdbtm = 10
+nr_pdb = 500
+nr_pdbtm = 100
 np.random.seed(1996)
 sampled_pdbs = np.random.choice(pdb_ids, nr_pdb)
 
