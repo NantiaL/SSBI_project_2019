@@ -6,7 +6,8 @@ Last Modified : Sa 22 Jun 2019 18:56:06 CEST
 Author : Luca Deininger
 Function of the script :
 """
-import xml.etree.cElementTree as ET
+
+# import xml.etree.cElementTree as ET
 from Bio.PDB import *
 from train_SVM import pdn
 import os
@@ -22,6 +23,7 @@ import pickle
 import copy
 
 from membrane_approximator import approximate_membrane
+from test_results import test_result_against_pdbtm
 
 
 def main():
@@ -57,10 +59,12 @@ def main():
         print(pdb_id)
 
         if not test_annotations(helix_svm_annotations, pdb_id):
+            test_result_against_pdbtm(pdb_id, helix_svm_annotations[pdb_id], [0, 0, 0], [0, 0, 0])
+            print()
             continue
 
         # print("Sequences:", helix_seqs[pdb_id])
-        print("Annotations:", helix_svm_annotations[pdb_id])
+        # print("Annotations:", helix_svm_annotations[pdb_id])
         # print("Infos:", helix_info[pdb_id])
         # print("C_alphas:", helix_c_alphas[pdb_id])
 
@@ -69,6 +73,8 @@ def main():
 
         print("Approx. membrane axis:", mem_axis)
         print("Approx. membrane pos :", mem_position)
+        # pdbid, helix_annotations, membrane_axis, membrane_position
+        test_result_against_pdbtm(pdb_id, helix_svm_annotations[pdb_id], mem_axis, mem_position)
 
         print()
 
