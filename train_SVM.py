@@ -367,6 +367,7 @@ def main():
   #  clf3 = svm.SVC(kernel='linear', C=3.0, probability=True)
 
     # train SVM
+    print(data[0], label[0])
     trained_SVM = fit_SVM(clf, data, label)
 #    trained_SVM2 = fit_SVM(clf2, data, label)
 #    trained_SVM3 = fit_SVM(clf3, data, label)

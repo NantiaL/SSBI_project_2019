@@ -2,7 +2,7 @@
 """
 File Name : main.py
 Creation Date : 13-06-2019
-Last Modified : Sa 22 Jun 2019 18:56:06 CEST
+Last Modified : Mo 24 Jun 2019 16:45:52 CEST
 Author : Luca Deininger
 Function of the script :
 """
@@ -29,14 +29,8 @@ from test_results import test_result_against_pdbtm
 def main():
     define_proteinogenic_aas()
 
-    # mixed pdbs and pdbtms
-
+    # directory of 500 PDB files and 100 pdb files (included in the PDBTM)
     pdb_dir = "500pdb_100pdbtm/"
-
-    #pdb_dir = "50pdb_0pdbtm/"
-    #pdb_dir = "0pdb_25pdbtm/"
-    #pdb_dir = "50pdb_25pdbtm/"
-    #pdb_dir = "test_pdbtm/"
     parse_again = False#True
 
     if parse_again==True:
@@ -47,14 +41,16 @@ def main():
 
     # Annotate helices with SVM
     svm_name="trained_SVM.sav"
-    #svm_name="trained_SVM_rel.sav"
-    #svm_name="trained_SVM_tm_non_alpha_helices_ss_included.sav"
-    #svm_name="trained_SVM_lin_c_5.sav"
     trained_svm = pickle.load(open("serialized/"+svm_name, 'rb'))
     helix_svm_annotations = annotate_helices(trained_svm, helix_seqs)
 
     # Annotate helices with PDBTM
     pdbtm_annotations = annotate_pdbtm(helix_info)
+    # Validate SVM predictions
+    tp, tn, fp, fn, tpr, fpr = validate(helix_info, pdbtm_annotations, helix_svm_annotations)
+    print("TP: ", tp, "\nTN: ", tn, "\nFP: ", fp, "\nFN: ", fn, "\nTPR: ", tpr, "\nFPR: ", fpr)
+    print("Correctly classified: ", (tn+tp)/(tp+tn+fp+fn)) 
+    print("Incorrectly classified: ", (fp+fn)/(tp+tn+fp+fn)) 
 
     # just to show results, might be easier to understand structure by this
     correctly_classified = []
@@ -209,12 +205,7 @@ def annotate_pdbtm(helix_info):
                     start_pdbtm = cand[0][1]
                     end_pdbtm = cand[1][1]
                     chain_pdbtm=cand[0][0]
-                    overlap=2
-
-            #        # annotate helix < length 5 as non_tm
-            #        if (end-start)<5:
-            #            annot=0
-            #            break
+                    overlap_frac=0.5
 
                     # if different chain -> continue
                     if chain!=chain_pdbtm:
@@ -230,20 +221,22 @@ def annotate_pdbtm(helix_info):
 
                     # only annotate helix as tm if at least half of the length of both helices overlap
                     elif start < start_pdbtm:
-                        if ((end-start_pdbtm) > ((end-start)/(overlap))) and ((end-start_pdbtm) > ((end_pdbtm-start_pdbtm)/overlap)):
+                        if ((end-start_pdbtm) > (overlap_frac*(end-start))) and ((end-start_pdbtm) > (overlap_frac*(end_pdbtm-start_pdbtm))):
+                        #if ((end-start_pdbtm) > ((end-start)/(overlap))) and ((end-start_pdbtm) > ((end_pdbtm-start_pdbtm)/overlap)):
                            # print(pdbid, start, end, start_pdbtm, end_pdbtm)
                             annot=1
                             break
                         else:
                             continue
                     else:
-                        if ((end_pdbtm-start) > ((end-start)/(overlap))) and ((end_pdbtm-start)>((end_pdbtm-start_pdbtm)/overlap)):
+                        if ((end_pdbtm-start) > (overlap_frac*(end-start))) and ((end_pdbtm-start)>(overlap_frac*(end_pdbtm-start_pdbtm))):
+                        #if ((end_pdbtm-start) > ((end-start)/(overlap))) and ((end_pdbtm-start)>((end_pdbtm-start_pdbtm)/overlap)):
                            # print(pdbid, start, end, start_pdbtm, end_pdbtm)
                             annot=1
                             break
                         else:
                             continue
-      #          print("pdb:", helix[0], "/", helix[len(helix)-1], "pdbtm:", cand[0], "/", cand[1], "annot:", annot)
+                print("pdb:", helix[0], "/", helix[len(helix)-1], "pdbtm:", cand[0], "/", cand[1], "annot:", annot)
                 pdb_annotation.append([annot])
 
             pdbtm_annotations[pdbid] = pdb_annotation

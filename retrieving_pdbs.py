@@ -2,7 +2,7 @@
 """
 File Name : retrieving_pdbs.py
 Creation Date : 02-06-2019
-Last Modified : Sa 22 Jun 2019 15:55:59 CEST
+Last Modified : Mo 24 Jun 2019 16:33:27 CEST
 Author : Luca Deininger
 Function of the script :
 """
@@ -47,8 +47,13 @@ nr_pdbtm = 500
 np.random.seed(1996)
 sampled_pdbs = np.random.choice(pdb_ids, nr_pdb, replace=False)
 
+<<<<<<< HEAD
 np.random.seed(1996)
 sampled_pdbtms = np.random.choice(pdbtm_unique_ids, nr_pdbtm, replace=False)
+=======
+np.random.seed(1)
+sampled_pdbtms = np.random.choice(pdbtm_unique_ids, nr_pdbtm)
+>>>>>>> cb23c8576c84ef31684a0e6bcea1d665dee62181
 
 print("Sampled PDBs:", sampled_pdbs)
 print("Sampled PDBTMs:", sampled_pdbtms)
@@ -57,9 +62,9 @@ pdbl = PDBList()
 
 # retrieve these from pdb database
 for i in sampled_pdbs:
-    pdbl.retrieve_pdb_file(i, pdir='{}pdb_{}pdbtm'.format(nr_pdb, nr_pdbtm),
+    pdbl.retrieve_pdb_file(i, pdir='training_{}pdb_{}pdbtm'.format(nr_pdb, nr_pdbtm),
                            file_format="pdb", overwrite=False)
 
 for i in sampled_pdbtms:
-    pdbl.retrieve_pdb_file(i, pdir='{}pdb_{}pdbtm'.format(nr_pdb, nr_pdbtm),
+    pdbl.retrieve_pdb_file(i, pdir='training_{}pdb_{}pdbtm'.format(nr_pdb, nr_pdbtm),
                            file_format="pdb", overwrite=False)

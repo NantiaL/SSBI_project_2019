@@ -3,6 +3,8 @@
 *.ent
 *.pyc
 .pytest_cache/*
+serialized/train_SVM_new*
+train_SVM_new.py
 
 # luca local repo - not needed
 clustering_helices.py 
