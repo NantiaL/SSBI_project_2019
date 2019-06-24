@@ -31,11 +31,11 @@ def main():
 
     # mixed pdbs and pdbtms
 
-    # pdb_dir = "500pdb_100pdbtm/"
+    pdb_dir = "500pdb_100pdbtm/"
 
     #pdb_dir = "50pdb_0pdbtm/"
     #pdb_dir = "0pdb_25pdbtm/"
-    pdb_dir = "50pdb_25pdbtm/"
+    #pdb_dir = "50pdb_25pdbtm/"
     #pdb_dir = "test_pdbtm/"
     parse_again = False#True
 
@@ -127,13 +127,15 @@ def main():
 
     #print(distances)
     #print(angles)
-    plt.hist(distances)
+    bins = np.arange(-2, 2, 0.1)
+    plt.hist(distances, bins=bins)
     plt.title("Distances from pdbtm matrix: " + str(len(distances)) + " files.")
     plt.xlabel("distance in Angstrom(?)")
     plt.show()
     plt.close()
 
-    plt.hist(angles)
+    bins = np.arange(0, 90, 1)
+    plt.hist(angles, bins=bins)
     plt.title("Angles between normal approximation and pdbtm normal: " + str(len(distances)) + " files.")
     plt.xlabel("Angle in degrees")
 
@@ -315,6 +317,8 @@ def test_annotations(annotation, pdb_id):
     # print("Aveage confidence per helix:", avg_confidence)
     # TODO find good criteria:
     if avg_confidence < 0.9 and count_tm_helices < 10 or count_tm_helices <= min_number_helices:
+        for i in range(len(annotation[pdb_id])):
+            annotation[pdb_id][i][0] = 0
         return False, avg_confidence
 
     return True, avg_confidence

@@ -4,25 +4,83 @@ import matplotlib.pyplot as plt
 import sys
 
 
+global_min_distances = []
+
 def approximate_membrane(pdb_id, helices_c_alphas, helices_annotation):
 
-    indices_tm_helices = []
-    for i in range(len(helices_annotation[pdb_id])):
-        if helices_annotation[pdb_id][i][0] == 1:
-            indices_tm_helices.append(i)
+    times = 0
+    while True:
+        tm_helices = get_tm_helices(helices_annotation[pdb_id], helices_c_alphas[pdb_id])
+        axis = approximate_membrane_axis(tm_helices)
+        position = approximate_membrane_position(tm_helices)
+        if all(x == 0 for x in axis):
+            print("Couldn't approximate axis:", pdb_id)
+            break
 
-    tm_helices = []
-    for idx in indices_tm_helices:
-        tm_helices.append(helices_c_alphas[pdb_id][idx])
+        changed = False
+        new_helices_anno, changed = refine_annotation(helices_annotation[pdb_id], helices_c_alphas[pdb_id], axis, position)
 
-    axis = approximate_membrane_axis(tm_helices)
-    if all(x == 0 for x in axis):
-        print("Couldn't approximate axis:", pdb_id)
-
-    position = approximate_membrane_position(tm_helices)
+        times += 1
+        if not changed or times > 5:
+            #print("Stopped:", times)
+            break
 
     return axis, position
 
+
+def refine_annotation(helices_annotation, helices_c_alphas, axis, position):
+    assumed_thickness = 0.7
+
+    plane = create_plane_equation(axis, position)
+    changed = False
+    for idx in range(len(helices_c_alphas)):
+        # print()
+        # print(helices_annotation[idx])
+        #tm_matrix = helix_in_membrane_thickness(helices_c_alphas[idx], plane, assumed_thickness)
+        tm_matrix = helix_in_membrane_cuts_membrane(helices_c_alphas[idx], plane)
+
+        if tm_matrix and helices_annotation[idx][0] == 1 or not tm_matrix and helices_annotation[idx][0] == 0:
+            pass
+        else:
+            changed = True
+            # print("changed Annotation!")
+            if tm_matrix:
+                helices_annotation[idx][0] = 1
+            else:
+                helices_annotation[idx][0] = 0
+            #print(helices_annotation[idx])
+    return helices_annotation, changed
+
+
+def helix_in_membrane_cuts_membrane(helix_c_alphas, plane):
+    positive = False
+    negative = False
+
+    for c_alpha in helix_c_alphas:
+        dist = get_distance_point_plane(c_alpha, plane)
+        if dist < 0:
+            negative = True
+        else:
+            positive = True
+
+        if positive and negative:
+            return True
+
+    return False
+
+
+def helix_in_membrane_thickness(helix_c_alphas, plane, thickness):
+    distances = []
+    for c_alpha in helix_c_alphas:
+        dist = get_distance_point_plane(c_alpha, plane)
+        distances.append(dist)
+
+    min_dist = np.abs(min(distances))
+    #print(min_dist)
+    if min_dist < thickness:
+        return True
+
+    return False
 
 def approximate_membrane_thickness(helices, pdb_id, membrane_normal, membrane_position):
     """
@@ -193,6 +251,19 @@ def mean_of_points(points):
     return sum_vector
 
 
+def get_tm_helices(helices_annotation, helices_c_alphas):
+    indices_tm_helices = []
+    for i in range(len(helices_annotation)):
+        if helices_annotation[i][0] == 1:
+            indices_tm_helices.append(i)
+
+    tm_helices = []
+    for idx in indices_tm_helices:
+        tm_helices.append(helices_c_alphas[idx])
+
+    return tm_helices
+
+"""
 def calculate_xml_membrane_position(pdbtm_m, pdb_id):
     vectors = extract_tmatrix_vectors_with_T(pdbtm_m, pdb_id)
 
@@ -263,4 +334,5 @@ def extract_normal_vector(pdbtm_m, pdb_id):
     for i in range(1, 4):
         normal.append(float(pdbtm_m[pdb_id][0][i]))
 
-    return normal
+    return normal 
+"""
