@@ -21,7 +21,7 @@ f.close()
 
 # Reduce pdbtm to pdb id
 pdbtm_unique_ids = [x[:4].upper() for x in pdbtm_all_ids]
-# pdbtm_unique_ids=list(set(pdbtm_unique_ids))
+pdbtm_unique_ids=list(set(pdbtm_unique_ids))
 
 # Get all pdb ids with resolution
 f = open(pdb_file, 'r')
@@ -41,15 +41,14 @@ for x in pdb_all_ids_reso:
     except:
         continue
 
-
 # Sample pdbs and pdbtms
 nr_pdb = 0
 nr_pdbtm = 500
 np.random.seed(1996)
-sampled_pdbs = np.random.choice(pdb_ids, nr_pdb)
+sampled_pdbs = np.random.choice(pdb_ids, nr_pdb, replace=False)
 
 np.random.seed(1996)
-sampled_pdbtms = np.random.choice(pdbtm_unique_ids, nr_pdbtm)
+sampled_pdbtms = np.random.choice(pdbtm_unique_ids, nr_pdbtm, replace=False)
 
 print("Sampled PDBs:", sampled_pdbs)
 print("Sampled PDBTMs:", sampled_pdbtms)
