@@ -2,12 +2,12 @@
 """
 File Name : main.py
 Creation Date : 13-06-2019
-Last Modified : Sa 22 Jun 2019 18:56:06 CEST
+Last Modified : Mo 24 Jun 2019 16:30:44 CEST
 Author : Luca Deininger
 Function of the script :
 """
 
-# import xml.etree.cElementTree as ET
+import xml.etree.cElementTree as ET
 from Bio.PDB import *
 from train_SVM import pdn
 import os
@@ -23,17 +23,14 @@ import pickle
 import copy
 
 from membrane_approximator import approximate_membrane
-from test_results import test_result_against_pdbtm
+#from test_results import test_result_against_pdbtm
 
 
 def main():
     define_proteinogenic_aas()
 
     # mixed pdbs and pdbtms
-    #pdb_dir = "50pdb_0pdbtm/"
-    #pdb_dir = "0pdb_25pdbtm/"
     pdb_dir = "50pdb_25pdbtm/"
-    #pdb_dir = "test_pdbtm/"
 
     parse_again = False#True
 
@@ -45,6 +42,7 @@ def main():
 
     # Annotate helices with SVM
     svm_name="trained_SVM.sav"
+    #svm_name="trained_SVM_new.sav"
     #svm_name="trained_SVM_rel.sav"
     #svm_name="trained_SVM_tm_non_alpha_helices_ss_included.sav"
     #svm_name="trained_SVM_lin_c_5.sav"
@@ -59,7 +57,7 @@ def main():
         print(pdb_id)
 
         if not test_annotations(helix_svm_annotations, pdb_id):
-            test_result_against_pdbtm(pdb_id, helix_svm_annotations[pdb_id], [0, 0, 0], [0, 0, 0])
+        #    test_result_against_pdbtm(pdb_id, helix_svm_annotations[pdb_id], [0, 0, 0], [0, 0, 0])
             print()
             continue
 
@@ -74,7 +72,7 @@ def main():
         print("Approx. membrane axis:", mem_axis)
         print("Approx. membrane pos :", mem_position)
         # pdbid, helix_annotations, membrane_axis, membrane_position
-        test_result_against_pdbtm(pdb_id, helix_svm_annotations[pdb_id], mem_axis, mem_position)
+       # test_result_against_pdbtm(pdb_id, helix_svm_annotations[pdb_id], mem_axis, mem_position)
 
         print()
 
@@ -144,12 +142,7 @@ def annotate_pdbtm(helix_info):
                     start_pdbtm = cand[0][1]
                     end_pdbtm = cand[1][1]
                     chain_pdbtm=cand[0][0]
-                    overlap=2
-
-            #        # annotate helix < length 5 as non_tm
-            #        if (end-start)<5:
-            #            annot=0
-            #            break
+                    overlap_frac=0.5
 
                     # if different chain -> continue
                     if chain!=chain_pdbtm:
@@ -165,20 +158,22 @@ def annotate_pdbtm(helix_info):
 
                     # only annotate helix as tm if at least half of the length of both helices overlap
                     elif start < start_pdbtm:
-                        if ((end-start_pdbtm) > ((end-start)/(overlap))) and ((end-start_pdbtm) > ((end_pdbtm-start_pdbtm)/overlap)):
+                        if ((end-start_pdbtm) > (overlap_frac*(end-start))) and ((end-start_pdbtm) > (overlap_frac*(end_pdbtm-start_pdbtm))):
+                        #if ((end-start_pdbtm) > ((end-start)/(overlap))) and ((end-start_pdbtm) > ((end_pdbtm-start_pdbtm)/overlap)):
                            # print(pdbid, start, end, start_pdbtm, end_pdbtm)
                             annot=1
                             break
                         else:
                             continue
                     else:
-                        if ((end_pdbtm-start) > ((end-start)/(overlap))) and ((end_pdbtm-start)>((end_pdbtm-start_pdbtm)/overlap)):
+                        if ((end_pdbtm-start) > (overlap_frac*(end-start))) and ((end_pdbtm-start)>(overlap_frac*(end_pdbtm-start_pdbtm))):
+                        #if ((end_pdbtm-start) > ((end-start)/(overlap))) and ((end_pdbtm-start)>((end_pdbtm-start_pdbtm)/overlap)):
                            # print(pdbid, start, end, start_pdbtm, end_pdbtm)
                             annot=1
                             break
                         else:
                             continue
-      #          print("pdb:", helix[0], "/", helix[len(helix)-1], "pdbtm:", cand[0], "/", cand[1], "annot:", annot)
+                print("pdb:", helix[0], "/", helix[len(helix)-1], "pdbtm:", cand[0], "/", cand[1], "annot:", annot)
                 pdb_annotation.append([annot])
 
             pdbtm_annotations[pdbid] = pdb_annotation
