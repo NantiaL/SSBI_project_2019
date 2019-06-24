@@ -2,7 +2,7 @@
 """
 File Name : retrieving_pdbs.py
 Creation Date : 02-06-2019
-Last Modified : Mo 24 Jun 2019 16:13:07 CEST
+Last Modified : Mo 24 Jun 2019 16:33:27 CEST
 Author : Luca Deininger
 Function of the script :
 """
@@ -43,9 +43,9 @@ for x in pdb_all_ids_reso:
 
 
 # Sample pdbs and pdbtms
-nr_pdb = 50
-nr_pdbtm = 25 
-np.random.seed(1)#1996
+nr_pdb = 0
+nr_pdbtm = 500
+np.random.seed(1996)
 sampled_pdbs = np.random.choice(pdb_ids, nr_pdb)
 
 np.random.seed(1)
