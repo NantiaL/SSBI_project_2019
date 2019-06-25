@@ -2,7 +2,7 @@
 """
 File Name : get_ss_from_struc.py
 Creation Date : 02-06-2019
-Last Modified : Di 25 Jun 2019 11:34:36 CEST
+Last Modified : Di 25 Jun 2019 12:09:43 CEST
 Author : Luca Deininger
 Function of the script :
 """
@@ -199,7 +199,7 @@ def main():
     f.close()
 
     # directories of sampled pdbs and pdbtms
-    pdb_dir = "pdb_structures/"
+    pdb_dir = "train_pdb_structures/"
     pdbtm_dir = "pdbtm_structures/"
 
     pdbs = os.listdir(pdb_dir)
