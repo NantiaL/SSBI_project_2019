@@ -21,43 +21,41 @@ from sklearn import svm
 from Bio import BiopythonWarning
 import pickle
 import copy
+import argparse
 
 from membrane_approximator import approximate_membrane
 from test_results import test_result_against_pdbtm
 
 
-def main():
+def main(dir_path, svm_type, test_data):
     define_proteinogenic_aas()
 
-    # directory of 500 PDB files and 100 pdb files (included in the PDBTM)
-    pdb_dir = "500pdb_100pdbtm/"
-    parse_again = False#True
+    if test_data != "None":
+        dir_path = test_data
 
-    if parse_again==True:
-        helix_seqs, helix_info, helix_c_alphas = parse_pdbs(pdb_dir)
-        export_dicts(helix_seqs, helix_info, helix_c_alphas, pdb_dir)
+
+    # dir_path = "500pdb_100pdbtm/"
+
+    if already_parsed(dir_path):
+        print("Using checkpoint of already parsed files!")
+        helix_seqs, helix_info, helix_c_alphas = import_dicts(dir_path)
     else:
-        helix_seqs, helix_info, helix_c_alphas = import_dicts(pdb_dir)
+        print("Starting to parse files:")
+        helix_seqs, helix_info, helix_c_alphas = parse_pdbs(dir_path)
+        export_dicts(helix_seqs, helix_info, helix_c_alphas, dir_path)
 
-
-    # at Alex: what i need from parser: string "abs"/"abs_ext"/"rel" in variable svm_type
-
-    # Annotate helices with SVM
-    svm_type="abs"
-    #svm_type="abs_ext"
-    #svm_type="rel"
     trained_svm = get_svm(svm_type)
     helix_svm_annotations = annotate_helices(trained_svm, helix_seqs, svm_type)
 
     # Annotate helices with PDBTM
-    pdbtm_annotations = annotate_pdbtm(helix_info)
+    # pdbtm_annotations = annotate_pdbtm(helix_info)
 
     # Validate SVM predictions
-    tp, tn, fp, fn, tpr, fpr = validate(helix_info, pdbtm_annotations, helix_svm_annotations)
-    print("After SVM classification:")
-    print("TP: ", tp, "\nTN: ", tn, "\nFP: ", fp, "\nFN: ", fn, "\nTPR: ", tpr, "\nFPR: ", fpr)
-    print("Correctly classified: ", (tn+tp)/(tp+tn+fp+fn)) 
-    print("Incorrectly classified: ", (fp+fn)/(tp+tn+fp+fn)) 
+    # tp, tn, fp, fn, tpr, fpr = validate(helix_info, pdbtm_annotations, helix_svm_annotations)
+    # print("After SVM classification:")
+    # print("TP: ", tp, "\nTN: ", tn, "\nFP: ", fp, "\nFN: ", fn, "\nTPR: ", tpr, "\nFPR: ", fpr)
+    # print("Correctly classified: ", (tn+tp)/(tp+tn+fp+fn))
+    # print("Incorrectly classified: ", (fp+fn)/(tp+tn+fp+fn))
 
     correctly_classified = []
     angles = []
@@ -67,24 +65,16 @@ def main():
     false_positives = []
 
     for pdb_id in list(helix_seqs.keys()):
-        # print(pdb_id)
+        print("Testing and approximating membrane for:", pdb_id)
 
         accepted, mean_confidence = test_annotations(helix_svm_annotations, pdb_id)
 
-        if not accepted:
-            class_correct, angle, dist, false_positive = test_result_against_pdbtm(pdb_id,
-                                                                                   helix_svm_annotations[pdb_id],
-                                                                                   [0, 0, 0], [0, 0, 0])
-        else:
-            mem_axis, mem_position = approximate_membrane(pdb_id, helix_c_alphas, helix_svm_annotations)
-            class_correct, angle, dist, false_positive = test_result_against_pdbtm(pdb_id,
-                                                                                   helix_svm_annotations[pdb_id],
-                                                                                   mem_axis, mem_position)
+        mem_axis, mem_position = approximate_membrane(pdb_id, helix_c_alphas, helix_svm_annotations)
 
-        # print("Approx. membrane axis:", mem_axis)
-        # print("Approx. membrane pos :", mem_position)
-        # pdbid, helix_annotations, membrane_axis, membrane_position
 
+        class_correct, angle, dist, false_positive = test_result_against_pdbtm(pdb_id,
+                                                                               helix_svm_annotations[pdb_id],
+                                                                               mem_axis, mem_position)
 
         if mean_confidence is not None:
             if not class_correct:
@@ -100,17 +90,21 @@ def main():
             distances.append(dist)
 
         if not class_correct:
+            print(pdb_id, "is false positive:", false_positive)
             false_positives.append(false_positive)
+
+        # print("Approx. membrane axis:", mem_axis)
+        # print("Approx. membrane pos :", mem_position)
+        # pdbid, helix_annotations, membrane_axis, membrane_position
 
         # print()
 
-    #plt.hist(confidences, alpha=0.5)
-    #plt.hist(confidences_mistakes, color='red', alpha=0.5)
-    #plt.title("Confidence mistakes")
-    #plt.show()
-    #plt.close()
 
-
+    # plt.hist(confidences, alpha=0.5)
+    # plt.hist(confidences_mistakes, color='red', alpha=0.5)
+    # plt.title("Confidence mistakes")
+    # plt.show()
+    # plt.close()
 
     total = len(correctly_classified)
     correct = sum([1 for x in correctly_classified if x])
@@ -126,25 +120,33 @@ def main():
     #print(angles)
     bins = np.arange(-2, 2, 0.1)
     plt.hist(distances, bins=bins)
-    plt.title("Distances from pdbtm matrix: " + str(len(distances)) + " files.")
-    plt.xlabel("distance in Angstrom(?)")
+    plt.title("Distance between approximated membrane and membrane in pdbtm: " + str(len(distances)) + " files.")
+    plt.ylabel("Number of occurrences")
+    plt.xlabel("Distance in Angstrom")
+    tickstep = 0.5
+    plt.xticks(np.arange(-2, 2+tickstep, tickstep))
+    plt.xlim(-2, 2)
     plt.show()
     plt.close()
 
     bins = np.arange(0, 90, 1)
     plt.hist(angles, bins=bins)
-    plt.title("Angles between normal approximation and pdbtm normal: " + str(len(distances)) + " files.")
+    plt.title("Angles between approximated normal and normal in pdbtm: " + str(len(distances)) + " files.")
+    plt.ylabel("Number of occurrences")
     plt.xlabel("Angle in degrees")
-
+    tickstep = 5
+    plt.xticks(np.arange(0, 90 + tickstep, tickstep))
+    plt.xlim(0, 90)
     plt.show()
 
+    pdbtm_annotations = annotate_pdbtm(helix_info)
 
     # Validate SVM predictions
     tp, tn, fp, fn, tpr, fpr = validate(helix_info, pdbtm_annotations, helix_svm_annotations)
     print("After membrane refinement")
     print("TP: ", tp, "\nTN: ", tn, "\nFP: ", fp, "\nFN: ", fn, "\nTPR: ", tpr, "\nFPR: ", fpr)
-    print("Correctly classified: ", (tn+tp)/(tp+tn+fp+fn)) 
-    print("Incorrectly classified: ", (fp+fn)/(tp+tn+fp+fn)) 
+    print("Correctly classified: ", (tn+tp)/(tp+tn+fp+fn))
+    print("Incorrectly classified: ", (fp+fn)/(tp+tn+fp+fn))
 
 def get_svm(svm_type):
     if svm_type=="abs":
@@ -156,7 +158,7 @@ def get_svm(svm_type):
     else:
         print("SVM type unknown. Please enter known svm_type: abs/abs_ext/rel")
 
-    trained_svm = pickle.load(open("serialized/"+svm_name, 'rb'))
+    trained_svm = pickle.load(open("serialized/" + svm_name, 'rb'))
 
     return trained_svm
 
@@ -249,7 +251,7 @@ def annotate_pdbtm(helix_info):
                             break
                         else:
                             continue
-                print("pdb:", helix[0], "/", helix[len(helix)-1], "pdbtm:", cand[0], "/", cand[1], "annot:", annot)
+                # print("pdb:", helix[0], "/", helix[len(helix)-1], "pdbtm:", cand[0], "/", cand[1], "annot:", annot)
                 pdb_annotation.append([annot])
 
             pdbtm_annotations[pdbid] = pdb_annotation
@@ -344,6 +346,14 @@ def import_dicts(pdb_dir):
     helix_c_alphas = pickle.load(
         open(folder + "helix_c_alphas.p", "rb"))
     return helix_seqs, helix_info, helix_c_alphas
+
+
+def already_parsed(pdb_dir):
+    folder = "serialized/main_" + pdb_dir[0:-1]
+    for file in ["helix_seqs.p", "helix_info.p", "helix_c_alphas.p"]:
+        if not os.path.isfile(folder + file):
+            return False
+    return True
 
 
 def parse_pdbs(pdb_dir):
@@ -574,5 +584,40 @@ def pop_non_aas(dict_):
     return dict_
 
 
+def get_filepaths(dir):
+    files = []
+
+    for f in os.listdir(dir):
+        fp = os.path.join(dir, f)
+        if os.path.isfile(fp):
+            files.append(fp)
+
+    return sorted(files)
+
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(description='Classifier for membrane proteins')
+    parser.add_argument('directory', help='The directory with the pdb files.')
+    parser.add_argument("-s", "--svm_type", choices=["abs", "abs_ext", "rel"], default="abs", help="Type of svm to use. (default: %(default)s)")
+    parser.add_argument("-t", "--test_data", choices=["None", "500pdb_100pdbtm"], default="None", help="Allows testing with given datasets.(default: %(default)s)")
+    args = parser.parse_args()
+    # print(args)
+
+    if not os.path.isdir(args.directory):
+        print("Given path is not an existing directory:", args.directory, "\n")
+        parser.print_help()
+        exit(0)
+
+    files = get_filepaths(args.directory)
+
+    if len(files) == 0:
+        print("Given directory contains no files:", args.directory, "\n")
+        parser.print_help()
+        exit(0)
+
+    return args.directory, args.svm_type, args.test_data
+
+
 if __name__ == "__main__":
-    main()
+    dir_path, svm_type, test_data = parse_arguments()
+    main(dir_path, svm_type, test_data)

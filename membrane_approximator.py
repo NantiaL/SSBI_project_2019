@@ -11,13 +11,16 @@ def approximate_membrane(pdb_id, helices_c_alphas, helices_annotation):
     times = 0
     while True:
         tm_helices = get_tm_helices(helices_annotation[pdb_id], helices_c_alphas[pdb_id])
+        if len(tm_helices) == 0:
+            # if there is no tm helix return null vectors to represent no membrane:
+            return [0, 0, 0], [0, 0, 0]
+
         axis = approximate_membrane_axis(tm_helices)
         position = approximate_membrane_position(tm_helices)
         if all(x == 0 for x in axis):
             print("Couldn't approximate axis:", pdb_id)
             break
 
-        changed = False
         new_helices_anno, changed = refine_annotation(helices_annotation[pdb_id], helices_c_alphas[pdb_id], axis, position)
 
         times += 1
