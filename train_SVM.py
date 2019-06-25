@@ -265,7 +265,7 @@ def get_data_and_labels(pdb_dir, pdbtm_file, nr_tm, nr_nontm, svm_type):
 
     # Extracting helices in pdbtm files
     print("Extracting tm helices from pdbtm xml...")
-    pdbtms = parse_pdbtm("pdbtm_reduced.xml")
+    pdbtms = parse_pdbtm(pdbtm_file)
     pdbtm_helices = get_aa_in_helices(pdbtms)
     pdbtm_nontm_ss = get_aa_NOT_in_helices(pdbtms)
 
@@ -363,8 +363,8 @@ def main():
 
     define_proteinogeneic_aas()
 
-    pdb_dir = "pdb_structures/"
-    pdbtm_file = "pdbtm_reduced.xml"
+    pdb_dir = "train_pdb_structures/"
+    pdbtm_file = "pdbtmall.xml"
 
     # take 3000 TM and 3000 NON-TM for training
     nr_tm = 3000
