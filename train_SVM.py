@@ -248,13 +248,13 @@ def relative_counts(list_of_list):
     return list_of_list
 
 
-def get_data_and_labels(pdb_dir, pdbtm_file, nr_tm, nr_nontm):
+def get_data_and_labels(pdb_dir, pdbtm_file, nr_tm, nr_nontm, svm_type):
     # Extracting helices in pdb files
     pdbs = os.listdir(pdb_dir)
     pdb_counts_aa_helices = []
     print("Extracting non tm helices from sampled pdb structures...")
     for pdb in pdbs:
-        print(pdb)
+        print(pdb[3:-4])
         try:
             dssp = get_dssp_dict(pdb_dir, pdb)
             dssp_helices = parse_dssp(dssp)
@@ -275,21 +275,31 @@ def get_data_and_labels(pdb_dir, pdbtm_file, nr_tm, nr_nontm):
     # Create data for training and testing SVM
 
     data_tm = [list(x.values()) for x in pdbtm_counts_aa_helices[:nr_tm]]
-    data_tm=relative_counts(data_tm)
-
     data_nontm = [list(x.values())
                   for x in pdb_counts_aa_helices[:nr_nontm]]
-    data_nontm=relative_counts(data_nontm)
-
-    #data_nontm2 = [list(x.values()) for x in pdbtm_counts_nontm_ss[:nr_nontm]]
-    data = data_tm+data_nontm#+data_nontm2
-    data = np.array(data, dtype=float)
-
     # labeling of data
     label_tm = [1 for i in range(len(data_tm))]
     label_nontm = [0 for i in range(len(data_nontm))]
-    #label_nontm2 = [0 for i in range(len(data_nontm2))]
     label = label_tm+label_nontm#+label_nontm2
+
+    if svm_type=="rel":
+        data_tm = relative_counts(data_tm)
+        data_nontm = relative_counts(data_nontm)
+        data = data_tm+data_nontm
+        label = label_tm+label_nontm
+    elif svm_type=="abs_ext":
+        data_nontm2 = [list(x.values()) for x in pdbtm_counts_nontm_ss[:nr_nontm]]
+        data = data_tm+data_nontm+data_nontm2
+        label_nontm2 = [0 for i in range(len(data_nontm2))]
+        label = label_tm+label_nontm+label_nontm2
+    elif svm_type=="abs":
+        data = data_tm+data_nontm
+        label = label_tm+label_nontm
+    else:
+        print("svm type unknown")
+        sys.exit()
+
+    data = np.array(data, dtype=float)
 
     return data, label
 
@@ -300,15 +310,15 @@ def seqs_to_svm_input(seqs):
     return np.array(counts)
 
 
-def export_(data, label):
-    folder = "serialized/train_SVM_"
+def export_(data, label, svm_type):
+    folder = "serialized/train_SVM_"+svm_type+"_"
     pickle.dump(data, open(folder+"data.p", "wb"))
     pickle.dump(label, open(folder+"label.p", "wb"))
 
 
-def import_():
+def import_(svm_type):
     print("Importing serialized data and labels...")
-    folder = "serialized/train_SVM_"
+    folder = "serialized/train_SVM_"+svm_type+"_"
     data = pickle.load(open(folder + "data.p", "rb"))
     label = pickle.load(open(folder + "label.p", "rb"))
     return data, label
@@ -348,43 +358,39 @@ def validate(data, label, predictions):
 
 
 def main():
+    parse_again= False# True
+    svm_type="abs"
 
     define_proteinogeneic_aas()
 
     pdb_dir = "pdb_structures/"
     pdbtm_file = "pdbtm_reduced.xml"
+
+    # take 3000 TM and 3000 NON-TM for training
     nr_tm = 3000
     nr_nontm = 3000
 
+
     # get data and label
-    data, label = get_data_and_labels(pdb_dir, pdbtm_file, nr_tm, nr_nontm)
-    export_(data, label)
-    #data, label = import_()
+    if parse_again==True:
+        data, label = get_data_and_labels(pdb_dir, pdbtm_file, nr_tm, nr_nontm, svm_type)
+        export_(data, label, svm_type)
+    else:
+        data, label = import_(svm_type)
 
     # setting up SVM
     clf = svm.SVC(kernel='linear', C=1.0, probability=True)
-  #  clf2 = svm.SVC(kernel='linear', C=2.0, probability=True)
-  #  clf3 = svm.SVC(kernel='linear', C=3.0, probability=True)
 
     # train SVM
-    print(data[0], label[0])
     trained_SVM = fit_SVM(clf, data, label)
-#    trained_SVM2 = fit_SVM(clf2, data, label)
-#    trained_SVM3 = fit_SVM(clf3, data, label)
-#    cv_SVM(clf, data, label, 10)
-#    cv_SVM(clf2, data, label, 10)
-#    cv_SVM(clf3, data, label, 10)
+    cv_SVM(clf, data, label, 10)
 
     # validate SVM
     predictions = trained_SVM.predict(data)
-    print(validate(data, label, predictions))
-#    predictions = trained_SVM2.predict(data)
-#    print(validate(data, label, predictions))
-#    predictions = trained_SVM3.predict(data)
-#    print(validate(data, label, predictions))
+    print("TPR and FPR: ", validate(data, label, predictions))
 
     # save trained SVM to disk
-    filename = 'serialized/trained_SVM_rel.sav'
+    filename = 'serialized/trained_SVM_{}.sav'.format(svm_type)
     pickle.dump(trained_SVM, open(filename, 'wb'))
 
 

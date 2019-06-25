@@ -2,7 +2,7 @@
 """
 File Name : get_ss_from_struc.py
 Creation Date : 02-06-2019
-Last Modified : Fr 21 Jun 2019 15:11:28 CEST
+Last Modified : Di 25 Jun 2019 11:34:36 CEST
 Author : Luca Deininger
 Function of the script :
 """
@@ -163,7 +163,7 @@ def parse_files(pdbs, pdbtms, pdbtm_all_ids, pdb_dir, pdbtm_dir):
 
 
 def export_(pdb_aa_helices, pdbtm_aa_helices, pdb_aa_helices_rel, pdbtm_aa_helices_rel):
-    folder = "serialized/get_ss_from_struc_"
+    folder = "serialized/draw_boxplot_"
     pickle.dump(pdb_aa_helices, open(folder+"pdb_aa_helices.p", "wb"))
     pickle.dump(pdbtm_aa_helices, open(folder+"pdbtm_aa_helices.p", "wb"))
     pickle.dump(pdb_aa_helices_rel, open(folder+"pdb_aa_helices_rel.p", "wb"))
@@ -173,7 +173,7 @@ def export_(pdb_aa_helices, pdbtm_aa_helices, pdb_aa_helices_rel, pdbtm_aa_helic
 
 def import_():
     print("Importing serialized datastructures...")
-    folder = "serialized/get_ss_from_struc_"
+    folder = "serialized/draw_boxplot_"
     pdb_aa_helices = pickle.load(open(folder + "pdb_aa_helices.p", "rb"))
     pdbtm_aa_helices = pickle.load(open(folder + "pdbtm_aa_helices.p", "rb"))
     pdb_aa_helices_rel = pickle.load(
@@ -184,6 +184,8 @@ def import_():
 
 
 def main():
+
+    parse_again=False # True
 
     # defining all one letter code amino acids
     global aas
@@ -203,11 +205,11 @@ def main():
     pdbs = os.listdir(pdb_dir)
     pdbtms = os.listdir(pdbtm_dir)
 
-    # Parsing files
-    #pdb_aa_helices, pdbtm_aa_helices, pdb_aa_helices_rel, pdbtm_aa_helices_rel = parse_files(pdbs, pdbtms, pdbtm_all_ids, pdb_dir, pdbtm_dir)
-
-    #export_(pdb_aa_helices, pdbtm_aa_helices, pdb_aa_helices_rel, pdbtm_aa_helices_rel)
-    pdb_aa_helices, pdbtm_aa_helices, pdb_aa_helices_rel, pdbtm_aa_helices_rel=import_()
+    if parse_again:
+        pdb_aa_helices, pdbtm_aa_helices, pdb_aa_helices_rel, pdbtm_aa_helices_rel = parse_files(pdbs, pdbtms, pdbtm_all_ids, pdb_dir, pdbtm_dir)
+        export_(pdb_aa_helices, pdbtm_aa_helices, pdb_aa_helices_rel, pdbtm_aa_helices_rel)
+    else:
+        pdb_aa_helices, pdbtm_aa_helices, pdb_aa_helices_rel, pdbtm_aa_helices_rel=import_()
 
     # Boxplots of amino acid distributions
     print("Plotting Boxplots...")
@@ -280,35 +282,6 @@ def main():
     hB.set_visible(False)
     hR.set_visible(False)
     savefig('figures/boxplot_rel_hydrophilic_without_outliers.png')
-
-#    # Barplot: Summing all values up
-#    pdb_aa_helices = sum_up_counter(pdb_aa_helices)
-#    pdb_aa_helices_rel = sum_up_counter(pdb_aa_helices_rel)
-#    pdbtm_aa_helices = sum_up_counter(pdbtm_aa_helices)
-#    pdbtm_aa_helices_rel = sum_up_counter(pdbtm_aa_helices_rel)
-#
-#    # Bar plot of frequency of amino acids
-#    ind = np.arange(20)
-#    width = 0.35
-#
-#    # Absolute values
-#    plt.figure(figsize=(10, 6))
-#    plt.bar(ind, pdb_aa_helices.values(), width, color='r', label='PDB')
-#    plt.bar(ind+width, pdbtm_aa_helices.values(),
-#            width, color='g', label='PDBTM')
-#    plt.xticks(ind + width / 2, pdb_aa_helices.keys())
-#    plt.legend(loc='best')
-#    plt.savefig('barplot_abs.png')
-#
-#    # Relative values
-#    plt.figure(figsize=(10, 6))
-#    plt.bar(ind, pdb_aa_helices_rel.values(),
-#            width, color='r', label='PDB')
-#    plt.bar(ind+width, pdbtm_aa_helices_rel.values(),
-#            width, color='g', label='PDBTM')
-#    plt.xticks(ind + width / 2, pdb_aa_helices.keys())
-#    plt.legend(loc='best')
-#    plt.savefig('barplot_rel.png')
 
 
 main()

@@ -2,7 +2,7 @@
 """
 File Name : main.py
 Creation Date : 13-06-2019
-Last Modified : Mo 24 Jun 2019 16:45:52 CEST
+Last Modified : Di 25 Jun 2019 11:46:09 CEST
 Author : Luca Deininger
 Function of the script :
 """
@@ -39,20 +39,26 @@ def main():
     else:
         helix_seqs, helix_info, helix_c_alphas = import_dicts(pdb_dir)
 
+
+    # at Alex: what i need from parser: string "abs"/"abs_ext"/"rel" in variable svm_type
+
     # Annotate helices with SVM
-    svm_name="trained_SVM.sav"
-    trained_svm = pickle.load(open("serialized/"+svm_name, 'rb'))
-    helix_svm_annotations = annotate_helices(trained_svm, helix_seqs)
+    svm_type="abs"
+    #svm_type="abs_ext"
+    #svm_type="rel"
+    trained_svm = get_svm(svm_type)
+    helix_svm_annotations = annotate_helices(trained_svm, helix_seqs, svm_type)
 
     # Annotate helices with PDBTM
     pdbtm_annotations = annotate_pdbtm(helix_info)
+
     # Validate SVM predictions
     tp, tn, fp, fn, tpr, fpr = validate(helix_info, pdbtm_annotations, helix_svm_annotations)
+    print("After SVM classification:")
     print("TP: ", tp, "\nTN: ", tn, "\nFP: ", fp, "\nFN: ", fn, "\nTPR: ", tpr, "\nFPR: ", fpr)
     print("Correctly classified: ", (tn+tp)/(tp+tn+fp+fn)) 
     print("Incorrectly classified: ", (fp+fn)/(tp+tn+fp+fn)) 
 
-    # just to show results, might be easier to understand structure by this
     correctly_classified = []
     angles = []
     distances = []
@@ -64,11 +70,6 @@ def main():
         # print(pdb_id)
 
         accepted, mean_confidence = test_annotations(helix_svm_annotations, pdb_id)
-
-        # print("Sequences:", helix_seqs[pdb_id])
-        # print("Annotations:", helix_svm_annotations[pdb_id])
-        # print("Infos:", helix_info[pdb_id])
-        # print("C_alphas:", helix_c_alphas[pdb_id])
 
         if not accepted:
             class_correct, angle, dist, false_positive = test_result_against_pdbtm(pdb_id,
@@ -140,9 +141,25 @@ def main():
 
     # Validate SVM predictions
     tp, tn, fp, fn, tpr, fpr = validate(helix_info, pdbtm_annotations, helix_svm_annotations)
+    print("After membrane refinement")
     print("TP: ", tp, "\nTN: ", tn, "\nFP: ", fp, "\nFN: ", fn, "\nTPR: ", tpr, "\nFPR: ", fpr)
     print("Correctly classified: ", (tn+tp)/(tp+tn+fp+fn)) 
     print("Incorrectly classified: ", (fp+fn)/(tp+tn+fp+fn)) 
+
+def get_svm(svm_type):
+    if svm_type=="abs":
+        svm_name="trained_SVM_abs.sav"
+    elif svm_type=="abs_ext":
+        svm_name="trained_SVM_abs_ext.sav"
+    elif svm_type=="rel":
+        svm_name="trained_SVM_rel.sav"
+    else:
+        print("SVM type unknown. Please enter known svm_type: abs/abs_ext/rel")
+
+    trained_svm = pickle.load(open("serialized/"+svm_name, 'rb'))
+
+    return trained_svm
+
 
 
 def validate(helix_info, truth, predictions):
@@ -222,16 +239,12 @@ def annotate_pdbtm(helix_info):
                     # only annotate helix as tm if at least half of the length of both helices overlap
                     elif start < start_pdbtm:
                         if ((end-start_pdbtm) > (overlap_frac*(end-start))) and ((end-start_pdbtm) > (overlap_frac*(end_pdbtm-start_pdbtm))):
-                        #if ((end-start_pdbtm) > ((end-start)/(overlap))) and ((end-start_pdbtm) > ((end_pdbtm-start_pdbtm)/overlap)):
-                           # print(pdbid, start, end, start_pdbtm, end_pdbtm)
                             annot=1
                             break
                         else:
                             continue
                     else:
                         if ((end_pdbtm-start) > (overlap_frac*(end-start))) and ((end_pdbtm-start)>(overlap_frac*(end_pdbtm-start_pdbtm))):
-                        #if ((end_pdbtm-start) > ((end-start)/(overlap))) and ((end_pdbtm-start)>((end_pdbtm-start_pdbtm)/overlap)):
-                           # print(pdbid, start, end, start_pdbtm, end_pdbtm)
                             annot=1
                             break
                         else:
@@ -367,7 +380,7 @@ def parse_pdbs(pdb_dir):
     return helix_seqs, helix_info, helix_c_alphas
 
 
-def annotate_helices(svm, helix_seqs):
+def annotate_helices(svm, helix_seqs, svm_type):
     """
     Returns: dictionary helix_annotations. For every helix in helix seqs annotate the more probable annotation 0 (NONTM) or 1 (TM) and its probability
     pdb_id -> [[0, prob(0)], [0, prob(0)] [1, prob(1)]... [0, prob(0)]]
@@ -381,6 +394,18 @@ def annotate_helices(svm, helix_seqs):
         if len(svm_input) == 0:
             helix_annotations[pdb_id] = "Error: No helices existent, thus annotation not possible"
             continue
+
+        if svm_type=="rel":
+            pass
+#            rel_svm_input=[]
+#            for x in svm_input:
+#                try:
+#                    rel=[float(y)/sum(x) for y in x] # relative counts
+#                except ZeroDivisionError:
+#                    rel=[0.0 for y in x] # relative counts
+#                rel_svm_input.append(rel)
+#            print(svm_input, rel_svm_input)
+#            svm_input=rel_svm_input
 
         predictions = svm.predict_proba(svm_input)
         predictions = [[list(x).index(max(x)), max(x)] for x in predictions]
