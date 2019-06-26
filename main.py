@@ -249,7 +249,7 @@ def annotate_pdbtm(helix_info):
 
 
 def parse_pdbtm_xml(xml_file):
-    tree = ET.parse('pdbtmall.xml')
+    tree = ET.parse('data/pdbtmall.xml')
     root = tree.getroot()
     root.tag, root.attrib
     pdbtms = {}
@@ -365,7 +365,7 @@ def parse_pdbs(pdb_dir):
     helix_c_alphas = {}
     for pdb in pdbs:
         pdb_id = pdb[3:7]
-        print(pdb_id)
+        print(pdb)
         try:
             dssp = get_dssp_dict(pdb_dir, pdb)
             curr_helix_seqs, curr_helix_info = parse_dssp(dssp, pdb_dir, pdb)
@@ -609,8 +609,11 @@ def parse_arguments():
             print("Please use either a directory (-d) to specify files or use given test data (options -t).")
             parser.print_help()
             exit(0)
-        else:
-            args.directory = args.test_data + "/"
+
+    if args.test_data != "None":
+        print("Using provided test data.")
+        args.directory = args.test_data + "/"
+
     return args.directory, args.svm_type
 
 
