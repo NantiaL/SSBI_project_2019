@@ -2,7 +2,7 @@
 """
 File Name : main.py
 Creation Date : 13-06-2019
-Last Modified : Mi 26 Jun 2019 17:28:07 CEST
+Last Modified : Mi 26 Jun 2019 18:18:52 CEST
 Author : Luca Deininger
 Function of the script :
 """
@@ -40,16 +40,6 @@ def main(dir_path, svm_type):
 
     trained_svm = get_svm(svm_type)
     helix_svm_annotations = annotate_helices(trained_svm, helix_seqs, svm_type)
-
-    # Annotate helices with PDBTM
-    # pdbtm_annotations = annotate_pdbtm(helix_info)
-
-    # Validate SVM predictions
-    # tp, tn, fp, fn, tpr, fpr = validate(helix_info, pdbtm_annotations, helix_svm_annotations)
-    # print("After SVM classification:")
-    # print("TP: ", tp, "\nTN: ", tn, "\nFP: ", fp, "\nFN: ", fn, "\nTPR: ", tpr, "\nFPR: ", fpr)
-    # print("Correctly classified: ", (tn+tp)/(tp+tn+fp+fn))
-    # print("Incorrectly classified: ", (fp+fn)/(tp+tn+fp+fn))
 
     correctly_classified = []
     angles = []
@@ -133,8 +123,8 @@ def main(dir_path, svm_type):
     plt.xlim(0, 90)
     plt.show()
 
-    pdbtm_annotations = annotate_pdbtm(helix_info)
 
+    pdbtm_annotations = annotate_pdbtm(helix_info)
     # Validate SVM predictions
     tp, tn, fp, fn, tpr, fpr = validate(helix_info, pdbtm_annotations, helix_svm_annotations)
     print("After membrane refinement")
@@ -407,7 +397,6 @@ def annotate_helices(svm, helix_seqs, svm_type):
             continue
 
         if svm_type=="rel":
-            pass
             rel_svm_input=[]
             for x in svm_input:
                 try:

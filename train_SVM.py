@@ -363,15 +363,15 @@ def validate(data, label, predictions):
 
 
 def main():
-    parse_again = True  # True
+    pdb_dir = "train_pdb_structures/"
+    parse_again = False  # True
     svm_type = "abs"
 
     define_proteinogeneic_aas()
 
-    pdb_dir = "train_pdb_structures/"
     pdbtm_file = "pdbtmall.xml"
 
-    # take 3000 TM and 3000 NON-TM for training
+    # take maximal 3000 TM and 3000 NON-TM for training
     nr_tm = 3000
     nr_nontm = 3000
 

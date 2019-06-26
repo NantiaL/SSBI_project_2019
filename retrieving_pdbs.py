@@ -2,7 +2,7 @@
 """
 File Name : retrieving_pdbs.py
 Creation Date : 02-06-2019
-Last Modified : Di 25 Jun 2019 12:13:08 CEST
+Last Modified : Mi 26 Jun 2019 18:55:46 CEST
 Author : Luca Deininger
 Function of the script :
 """
@@ -11,6 +11,12 @@ import Bio
 from Bio.PDB import PDBList
 import numpy as np
 
+# Number of to Number of to be sample pdbs and pdbtms
+nr_pdb = 500
+nr_pdbtm = 100
+out_dir='{}pdb_{}pdbtm'.format(nr_pdb, nr_pdbtm)
+
+# Don't change these parameters
 pdbtm_file = "pdbtm_all_list.txt"
 pdb_file = "pdb_all_list_resolution.txt"
 
@@ -42,8 +48,6 @@ for x in pdb_all_ids_reso:
         continue
 
 # Sample pdbs and pdbtms
-nr_pdb = 0
-nr_pdbtm = 500
 np.random.seed(1996)
 sampled_pdbs = np.random.choice(pdb_ids, nr_pdb, replace=False)
 
@@ -57,9 +61,9 @@ pdbl = PDBList()
 
 # retrieve these from pdb database
 for i in sampled_pdbs:
-    pdbl.retrieve_pdb_file(i, pdir='training_{}pdb_{}pdbtm'.format(nr_pdb, nr_pdbtm),
+    pdbl.retrieve_pdb_file(i, pdir=out_dir,
                            file_format="pdb", overwrite=False)
 
 for i in sampled_pdbtms:
-    pdbl.retrieve_pdb_file(i, pdir='training_{}pdb_{}pdbtm'.format(nr_pdb, nr_pdbtm),
+    pdbl.retrieve_pdb_file(i, pdir=out_dir,
                            file_format="pdb", overwrite=False)
