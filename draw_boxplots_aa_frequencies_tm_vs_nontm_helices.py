@@ -2,7 +2,7 @@
 """
 File Name : get_ss_from_struc.py
 Creation Date : 02-06-2019
-Last Modified : Mi 26 Jun 2019 20:01:07 CEST
+Last Modified : Mi 26 Jun 2019 20:36:59 CEST
 Author : Luca Deininger
 Function of the script :
 """
@@ -202,10 +202,10 @@ def main():
     pdbtm_all_ids = f.readlines()
     f.close()
 
-    pdbs = os.listdir(pdb_dir)
-    pdbtms = os.listdir(pdbtm_dir)
 
     if parse_again:
+        pdbs = os.listdir(pdb_dir)
+        pdbtms = os.listdir(pdbtm_dir)
         pdb_aa_helices, pdbtm_aa_helices, pdb_aa_helices_rel, pdbtm_aa_helices_rel = parse_files(pdbs, pdbtms, pdbtm_all_ids, pdb_dir, pdbtm_dir)
         export_(pdb_aa_helices, pdbtm_aa_helices, pdb_aa_helices_rel, pdbtm_aa_helices_rel)
     else:
