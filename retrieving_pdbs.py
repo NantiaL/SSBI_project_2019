@@ -2,7 +2,7 @@
 """
 File Name : retrieving_pdbs.py
 Creation Date : 02-06-2019
-Last Modified : Mi 26 Jun 2019 18:55:46 CEST
+Last Modified : Mi 26 Jun 2019 20:01:40 CEST
 Author : Luca Deininger
 Function of the script :
 """
@@ -17,8 +17,8 @@ nr_pdbtm = 100
 out_dir='{}pdb_{}pdbtm'.format(nr_pdb, nr_pdbtm)
 
 # Don't change these parameters
-pdbtm_file = "pdbtm_all_list.txt"
-pdb_file = "pdb_all_list_resolution.txt"
+pdbtm_file = "data/pdbtm_all_list.txt"
+pdb_file = "data/pdb_all_list_resolution.txt"
 
 # Get all pdbtm ids + chain
 f = open(pdbtm_file, 'r')

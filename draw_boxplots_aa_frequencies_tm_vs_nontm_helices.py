@@ -2,7 +2,7 @@
 """
 File Name : get_ss_from_struc.py
 Creation Date : 02-06-2019
-Last Modified : Di 25 Jun 2019 12:09:43 CEST
+Last Modified : Mi 26 Jun 2019 20:01:07 CEST
 Author : Luca Deininger
 Function of the script :
 """
@@ -187,6 +187,10 @@ def main():
 
     parse_again=False # True
 
+    # directories of sampled pdbs and pdbtms
+    pdb_dir = "train_pdb_structures/"
+    pdbtm_dir = "pdbtm_structures/"
+
     # defining all one letter code amino acids
     global aas
     aas = list(string.ascii_uppercase)
@@ -194,13 +198,9 @@ def main():
         aas.remove(no_aa)
 
     # Get all pdbtm ids + chain
-    f = open('pdbtm_all_list.txt', 'r')
+    f = open('data/pdbtm_all_list.txt', 'r')
     pdbtm_all_ids = f.readlines()
     f.close()
-
-    # directories of sampled pdbs and pdbtms
-    pdb_dir = "train_pdb_structures/"
-    pdbtm_dir = "pdbtm_structures/"
 
     pdbs = os.listdir(pdb_dir)
     pdbtms = os.listdir(pdbtm_dir)

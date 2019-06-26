@@ -369,7 +369,7 @@ def main():
 
     define_proteinogeneic_aas()
 
-    pdbtm_file = "pdbtmall.xml"
+    pdbtm_file = "data/pdbtmall.xml"
 
     # take maximal 3000 TM and 3000 NON-TM for training
     nr_tm = 3000
