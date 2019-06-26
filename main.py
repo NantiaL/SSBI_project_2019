@@ -2,7 +2,7 @@
 """
 File Name : main.py
 Creation Date : 13-06-2019
-Last Modified : Mi 26 Jun 2019 18:18:52 CEST
+Last Modified : Mi 26 Jun 2019 19:45:53 CEST
 Author : Luca Deininger
 Function of the script :
 """
@@ -40,6 +40,12 @@ def main(dir_path, svm_type):
 
     trained_svm = get_svm(svm_type)
     helix_svm_annotations = annotate_helices(trained_svm, helix_seqs, svm_type)
+
+    tp, tn, fp, fn, tpr, fpr = validate(helix_info, pdbtm_annotations, helix_svm_annotations)
+    print("After membrane refinement")
+    print("TP: ", tp, "\nTN: ", tn, "\nFP: ", fp, "\nFN: ", fn, "\nTPR: ", tpr, "\nFPR: ", fpr)
+    print("Correctly classified: ", (tn+tp)/(tp+tn+fp+fn))
+    print("Incorrectly classified: ", (fp+fn)/(tp+tn+fp+fn))
 
     correctly_classified = []
     angles = []
