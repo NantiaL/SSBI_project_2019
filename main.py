@@ -2,7 +2,7 @@
 """
 File Name : main.py
 Creation Date : 13-06-2019
-Last Modified : Di 25 Jun 2019 12:06:37 CEST
+Last Modified : Mi 26 Jun 2019 17:26:20 CEST
 Author : Luca Deininger
 Function of the script :
 """
@@ -146,6 +146,7 @@ def main():
     print("Correctly classified: ", (tn+tp)/(tp+tn+fp+fn)) 
     print("Incorrectly classified: ", (fp+fn)/(tp+tn+fp+fn)) 
 
+
 def get_svm(svm_type):
     if svm_type=="abs":
         svm_name="trained_SVM_abs.sav"
@@ -249,7 +250,7 @@ def annotate_pdbtm(helix_info):
                             break
                         else:
                             continue
-                print("pdb:", helix[0], "/", helix[len(helix)-1], "pdbtm:", cand[0], "/", cand[1], "annot:", annot)
+                #print("pdb:", helix[0], "/", helix[len(helix)-1], "pdbtm:", cand[0], "/", cand[1], "annot:", annot)
                 pdb_annotation.append([annot])
 
             pdbtm_annotations[pdbid] = pdb_annotation
@@ -397,15 +398,14 @@ def annotate_helices(svm, helix_seqs, svm_type):
 
         if svm_type=="rel":
             pass
-#            rel_svm_input=[]
-#            for x in svm_input:
-#                try:
-#                    rel=[float(y)/sum(x) for y in x] # relative counts
-#                except ZeroDivisionError:
-#                    rel=[0.0 for y in x] # relative counts
-#                rel_svm_input.append(rel)
-#            print(svm_input, rel_svm_input)
-#            svm_input=rel_svm_input
+            rel_svm_input=[]
+            for x in svm_input:
+                try:
+                    rel=[float(y)/sum(x) for y in x] # relative counts
+                except ZeroDivisionError:
+                    rel=[0.0 for y in x] # relative counts
+                rel_svm_input.append(rel)
+            svm_input=rel_svm_input
 
         predictions = svm.predict_proba(svm_input)
         predictions = [[list(x).index(max(x)), max(x)] for x in predictions]

@@ -20,6 +20,8 @@ from Bio import BiopythonWarning
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_val_score
 import pickle
+from random import shuffle
+
 
 warnings.simplefilter('ignore', BiopythonWarning)
 
@@ -237,14 +239,15 @@ def define_proteinogeneic_aas():
     for no_aa in ["B", "J", "O", "U", "X", "Z"]:
         aas.remove(no_aa)
 
+
 def relative_counts(list_of_list):
     for i in range(len(list_of_list)):
-        sum_counts=sum(list_of_list[i])
+        sum_counts = sum(list_of_list[i])
         for j in range(len(list_of_list[i])):
             try:
-                list_of_list[i][j]=(list_of_list[i][j])/sum_counts
+                list_of_list[i][j] = (list_of_list[i][j])/sum_counts
             except ZeroDivisionError:
-                list_of_list[i][j]=0.0
+                list_of_list[i][j] = 0.0
     return list_of_list
 
 
@@ -267,32 +270,34 @@ def get_data_and_labels(pdb_dir, pdbtm_file, nr_tm, nr_nontm, svm_type):
     print("Extracting tm helices from pdbtm xml...")
     pdbtms = parse_pdbtm(pdbtm_file)
     pdbtm_helices = get_aa_in_helices(pdbtms)
-    pdbtm_nontm_ss = get_aa_NOT_in_helices(pdbtms)
-
     pdbtm_counts_aa_helices = count_aa(pdbtm_helices)
-    pdbtm_counts_nontm_ss = count_aa(pdbtm_nontm_ss)
 
     # Create data for training and testing SVM
-
+    print("helices from pdbtm xml", len(pdbtm_counts_aa_helices))
+    print("helices from 100 pdb", len(pdb_counts_aa_helices))
+    random.seed(1234)
+    shuffle(pdbtm_counts_aa_helices)
     data_tm = [list(x.values()) for x in pdbtm_counts_aa_helices[:nr_tm]]
     data_nontm = [list(x.values())
                   for x in pdb_counts_aa_helices[:nr_nontm]]
     # labeling of data
     label_tm = [1 for i in range(len(data_tm))]
     label_nontm = [0 for i in range(len(data_nontm))]
-    label = label_tm+label_nontm#+label_nontm2
 
-    if svm_type=="rel":
+    if svm_type == "rel":
         data_tm = relative_counts(data_tm)
         data_nontm = relative_counts(data_nontm)
         data = data_tm+data_nontm
         label = label_tm+label_nontm
-    elif svm_type=="abs_ext":
-        data_nontm2 = [list(x.values()) for x in pdbtm_counts_nontm_ss[:nr_nontm]]
+    elif svm_type == "abs_ext":
+        pdbtm_nontm_ss = get_aa_NOT_in_helices(pdbtms)
+        pdbtm_counts_nontm_ss = count_aa(pdbtm_nontm_ss)
+        data_nontm2 = [list(x.values())
+                       for x in pdbtm_counts_nontm_ss[:nr_nontm]]
         data = data_tm+data_nontm+data_nontm2
         label_nontm2 = [0 for i in range(len(data_nontm2))]
         label = label_tm+label_nontm+label_nontm2
-    elif svm_type=="abs":
+    elif svm_type == "abs":
         data = data_tm+data_nontm
         label = label_tm+label_nontm
     else:
@@ -358,8 +363,8 @@ def validate(data, label, predictions):
 
 
 def main():
-    parse_again= False# True
-    svm_type="abs"
+    parse_again = True  # True
+    svm_type = "abs"
 
     define_proteinogeneic_aas()
 
@@ -370,10 +375,10 @@ def main():
     nr_tm = 3000
     nr_nontm = 3000
 
-
     # get data and label
-    if parse_again==True:
-        data, label = get_data_and_labels(pdb_dir, pdbtm_file, nr_tm, nr_nontm, svm_type)
+    if parse_again == True:
+        data, label = get_data_and_labels(
+            pdb_dir, pdbtm_file, nr_tm, nr_nontm, svm_type)
         export_(data, label, svm_type)
     else:
         data, label = import_(svm_type)

@@ -1,0 +1,77 @@
+abs
+
+10-fold cross validation scores: [0.97465438 0.95852535 0.96766744 0.9630485  0.93533487 0.94688222
+ 0.96766744 0.9630485  0.97459584 0.9630485 ]
+Mean CV score: 0.961447302604272
+TPR and FPR:  (0.97, 0.0457957957957958)
+
+abs_ext
+10-fold cross validation scores: [0.95776567 0.94686649 0.95907231 0.94952251 0.92905866 0.93587995
+ 0.94542974 0.94952251 0.91814461 0.9686221 ]
+Mean CV score: 0.9459884540037395
+TPR and FPR:  (0.929, 0.041089566020313946)
+
+rel
+
+10-fold cross validation scores: [0.94930876 0.9124424  0.93764434 0.94688222 0.91916859 0.94226328
+ 0.95381062 0.926097   0.93995381 0.96535797]
+Mean CV score: 0.9392928981173039
+TPR and FPR:  (0.9863333333333333, 0.15015015015015015)
+
+
+abs
+After SVM classification:
+TPR:  0.9546599496221663 
+FPR:  0.09922766957689724
+Correctly classified:  0.908469453838958
+
+Correctly classified: 561 / 583
+Wrongly classified  : 22 / 583
+False positives: 8
+False negatives: 14
+After membrane refinement
+TPR:  0.839294710327456 
+FPR:  0.03433512424445937
+Correctly classified:  0.9476145930776426
+Incorrectly classified:  0.052385406922357346
+
+
+abs_ext
+TPR:  0.9078085642317381 
+FPR:  0.06380120886501008
+Correctly classified:  0.9321436281211772
+Correctly classified: 563 / 583
+Wrongly classified  : 20 / 583
+False positives: 5
+False negatives: 15
+After membrane refinement
+TPR:  0.8423173803526448 
+FPR:  0.026863666890530557
+Correctly classified:  0.9544506008491042
+Incorrectly classified:  0.045549399150895876
+
+
+rel
+TPR:  0.9289672544080605 
+FPR:  0.19769979852249833
+Correctly classified:  0.8203928905519177
+
+Correctly classified: 515 / 583
+Wrongly classified  : 68 / 583
+False positives: 53
+False negatives: 15
+After membrane refinement
+TP:  1594 
+TN:  11207 
+FP:  705 
+FN:  391 
+TPR:  0.8030226700251889 
+FPR:  0.059184016118200136
+Correctly classified:  0.9211340577102972
+Incorrectly classified:  0.07886594228970281
+
+
+
+
+
+
