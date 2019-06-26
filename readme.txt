@@ -1,10 +1,31 @@
 main.py:
 	- performs annotation and validation of given data
 	- uses a command line parser
-	- for comfortable usage, use -d 500pdb_0pdbtm/; the parsed serialized data is then used for the classifier
+	- for comfortable usage, use -t 500pdb_100pdbtm; the parsed serialized data is then used for the classifier:
+        >> python3 main.py -t 500pdb_100pdbtm
 	- else use own directory containing pdb structures
 	- outputs validation scores for classifier
 	- by default is SVM_abs used
+
+General usage:
+usage: main.py [-h] [-d DIRECTORY] [-s {abs,abs_ext,rel}]
+               [-t {None,500pdb_100pdbtm,0pdb_500pdbtm}]
+
+Classifier for membrane proteins
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -d DIRECTORY,         --directory:                    The directory with the pdb files.
+  -s ,                  --svm_type {abs,abs_ext,rel}    Type of svm to use. (default: abs)
+  -t ,                  --test_data {None,500pdb_100pdbtm,0pdb_500pdbtm}
+                                Allows testing with given datasets.(default: None)
+
+The -d option allows the testing of any directory with pdb files in it.
+The -s option allows the user to choose from three different svm.
+The -t option allows to the user to choose from different provided test datasets see options above.
+
+if the option -t is given the -d option is ignored and the test_dataset is analyzed.  
+
 	
 
 For default usage of classifier the following scripts are not necessary:
@@ -26,7 +47,7 @@ draw_boxplots_aa_frequencies_tm_vs_nontm_helices.py
 	- uses by default serialized tm and non tm helices to draw boxplots of amino acid frequencies
 
 
-The rest of the data explained:
+The rest of the data explained (within ./data):
 
 pdbtmall.xml:
 	- xml downloaded from the PDBTM website

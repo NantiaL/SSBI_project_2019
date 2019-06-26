@@ -67,7 +67,7 @@ def load_pdbtm_ids():
     if os.path.isfile(pdbtm_ids_path):
         return pickle.load(open(pdbtm_ids_path, "rb"))
     else:
-        filepath = "pdbtm_all_list.txt"
+        filepath = "data/pdbtm_all_list.txt"
         pdbtm_ids = {}
         for line in open(filepath, "r"):
             line = line.strip()
