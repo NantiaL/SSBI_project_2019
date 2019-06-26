@@ -27,14 +27,8 @@ from membrane_approximator import approximate_membrane
 from test_results import test_result_against_pdbtm
 
 
-def main(dir_path, svm_type, test_data):
+def main(dir_path, svm_type):
     define_proteinogenic_aas()
-
-    if test_data != "None":
-        dir_path = test_data
-
-
-    # dir_path = "500pdb_100pdbtm/"
 
     if already_parsed(dir_path):
         print("Using checkpoint of already parsed files!")
@@ -65,7 +59,7 @@ def main(dir_path, svm_type, test_data):
     false_positives = []
 
     for pdb_id in list(helix_seqs.keys()):
-        print("Testing and approximating membrane for:", pdb_id)
+        #print("Testing and approximating membrane for:", pdb_id)
 
         accepted, mean_confidence = test_annotations(helix_svm_annotations, pdb_id)
 
@@ -90,7 +84,7 @@ def main(dir_path, svm_type, test_data):
             distances.append(dist)
 
         if not class_correct:
-            print(pdb_id, "is false positive:", false_positive)
+            # print(pdb_id, "is false positive:", false_positive)
             false_positives.append(false_positive)
 
         # print("Approx. membrane axis:", mem_axis)
@@ -113,7 +107,7 @@ def main(dir_path, svm_type, test_data):
     false_negative_num = sum([1 for x in false_positives if not x])
     print("Correctly classified:", correct, "/", total)
     print("Wrongly classified  :", wrong, "/", total)
-    print("False positives:" , false_positive_num)
+    print("False positives:", false_positive_num)
     print("False negatives:", false_negative_num)
 
     #print(distances)
@@ -148,6 +142,7 @@ def main(dir_path, svm_type, test_data):
     print("Correctly classified: ", (tn+tp)/(tp+tn+fp+fn))
     print("Incorrectly classified: ", (fp+fn)/(tp+tn+fp+fn))
 
+
 def get_svm(svm_type):
     if svm_type=="abs":
         svm_name="trained_SVM_abs.sav"
@@ -161,7 +156,6 @@ def get_svm(svm_type):
     trained_svm = pickle.load(open("serialized/" + svm_name, 'rb'))
 
     return trained_svm
-
 
 
 def validate(helix_info, truth, predictions):
@@ -264,7 +258,6 @@ def annotate_pdbtm(helix_info):
 
 
 def parse_pdbtm_xml(xml_file):
-
     tree = ET.parse('pdbtmall.xml')
     root = tree.getroot()
     root.tag, root.attrib
@@ -304,6 +297,11 @@ def parse_pdbtm_xml(xml_file):
 
 
 def test_annotations(annotation, pdb_id):
+    """
+    filter annotations produced by the classifier to see whether they probably show a real TM protein.
+
+    return isTM, average_confidence
+    """
     min_number_helices = 1
     count_tm_helices = 0
     indices = []
@@ -322,8 +320,7 @@ def test_annotations(annotation, pdb_id):
         avg_confidence += annotation[pdb_id][idx][1]
 
     avg_confidence = avg_confidence/count_tm_helices
-    # print("Aveage confidence per helix:", avg_confidence)
-    # TODO find good criteria:
+
     if avg_confidence < 0.9 and count_tm_helices < 10 or count_tm_helices <= min_number_helices:
         for i in range(len(annotation[pdb_id])):
             annotation[pdb_id][i][0] = 0
@@ -349,6 +346,9 @@ def import_dicts(pdb_dir):
 
 
 def already_parsed(pdb_dir):
+    """
+    test if serialized files already exist.
+    """
     folder = "serialized/main_" + pdb_dir[0:-1]
     for file in ["helix_seqs.p", "helix_info.p", "helix_c_alphas.p"]:
         if not os.path.isfile(folder + file):
@@ -597,27 +597,34 @@ def get_filepaths(dir):
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Classifier for membrane proteins')
-    parser.add_argument('directory', help='The directory with the pdb files.')
+    parser.add_argument("-d", '--directory', help='The directory with the pdb files.')
     parser.add_argument("-s", "--svm_type", choices=["abs", "abs_ext", "rel"], default="abs", help="Type of svm to use. (default: %(default)s)")
-    parser.add_argument("-t", "--test_data", choices=["None", "500pdb_100pdbtm"], default="None", help="Allows testing with given datasets.(default: %(default)s)")
+    parser.add_argument("-t", "--test_data", choices=["None", "500pdb_100pdbtm", "0pdb_500pdbtm"], default="None", help="Allows testing with given datasets.(default: %(default)s)")
     args = parser.parse_args()
     # print(args)
 
-    if not os.path.isdir(args.directory):
-        print("Given path is not an existing directory:", args.directory, "\n")
-        parser.print_help()
-        exit(0)
+    if args.directory is not None:
+        if not os.path.isdir(args.directory):
+            print("Given path is not an existing directory:", args.directory, "\n")
+            parser.print_help()
+            exit(0)
 
-    files = get_filepaths(args.directory)
+        files = get_filepaths(args.directory)
 
-    if len(files) == 0:
-        print("Given directory contains no files:", args.directory, "\n")
-        parser.print_help()
-        exit(0)
-
-    return args.directory, args.svm_type, args.test_data
+        if len(files) == 0:
+            print("Given directory contains no files:", args.directory, "\n")
+            parser.print_help()
+            exit(0)
+    else:
+        if args.test_data == "None":
+            print("Please use either a directory (-d) to specify files or use given test data (options -t).")
+            parser.print_help()
+            exit(0)
+        else:
+            args.directory = args.test_data + "/"
+    return args.directory, args.svm_type
 
 
 if __name__ == "__main__":
-    dir_path, svm_type, test_data = parse_arguments()
-    main(dir_path, svm_type, test_data)
+    dir_path, svm_type = parse_arguments()
+    main(dir_path, svm_type)
